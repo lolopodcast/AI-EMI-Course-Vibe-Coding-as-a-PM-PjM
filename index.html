@@ -1,750 +1,1502 @@
-<style>
-  :root{
-    --bg:#EAF1F6;
-    --bg-grid:rgba(15,42,74,.10);
-    --ink:#12202C;
-    --ink-soft:#44596B;
-    --line:#2E6E93;
-    --line-soft:rgba(46,110,147,.35);
-    --accent:#D97D22;
-    --accent-ink:#241202;
-    --sheet-bg:#F5F9FB;
-    --card-bg:rgba(46,110,147,.07);
-    --shadow:rgba(15,42,74,.28);
-    --font-display:"PingFang TC","Microsoft JhengHei","Noto Sans TC","Hiragino Sans GB","Segoe UI",sans-serif;
-    --font-body:"PingFang TC","Microsoft JhengHei","Noto Sans TC","Segoe UI",sans-serif;
-    --font-mono:"SF Mono","JetBrains Mono",Consolas,"Courier New",monospace;
-  }
-  @media (prefers-color-scheme: dark){
-    :root{
-      --bg:#0E2740; --bg-grid:rgba(255,255,255,.08); --ink:#E6F1F8; --ink-soft:#9FBBCF;
-      --line:#6FB2DA; --line-soft:rgba(111,178,218,.35); --accent:#F2A94D; --accent-ink:#1B1204;
-      --sheet-bg:#12314F; --card-bg:rgba(111,178,218,.09); --shadow:rgba(0,0,0,.45);
-    }
-  }
-  :root[data-theme="dark"]{
-    --bg:#0E2740; --bg-grid:rgba(255,255,255,.08); --ink:#E6F1F8; --ink-soft:#9FBBCF;
-    --line:#6FB2DA; --line-soft:rgba(111,178,218,.35); --accent:#F2A94D; --accent-ink:#1B1204;
-    --sheet-bg:#12314F; --card-bg:rgba(111,178,218,.09); --shadow:rgba(0,0,0,.45);
-  }
-  :root[data-theme="light"]{
-    --bg:#EAF1F6; --bg-grid:rgba(15,42,74,.10); --ink:#12202C; --ink-soft:#44596B;
-    --line:#2E6E93; --line-soft:rgba(46,110,147,.35); --accent:#D97D22; --accent-ink:#241202;
-    --sheet-bg:#F5F9FB; --card-bg:rgba(46,110,147,.07); --shadow:rgba(15,42,74,.28);
-  }
-
-  *{box-sizing:border-box;}
-  .wrap{ width:100%; display:flex; justify-content:center; padding:2vh 0; }
-  .deck{
-    position:relative; width:100%; max-width:1180px; aspect-ratio:16/9; min-height:460px;
-    background:
-      linear-gradient(var(--bg-grid) 1px, transparent 1px),
-      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px),
-      var(--bg);
-    background-size:38px 38px, 38px 38px, auto;
-    color:var(--ink); font-family:var(--font-body);
-    border-radius:6px; overflow:hidden; box-shadow:0 24px 70px var(--shadow);
-    outline:1px solid var(--line-soft);
-  }
-  @media (max-width:640px){
-    .deck{ aspect-ratio:auto; min-height:82vh; }
-  }
-
-  .ruler{ position:absolute; top:0; left:0; right:0; height:20px; z-index:5;
-    background:linear-gradient(180deg, var(--sheet-bg), transparent); }
-  .ruler-fill{ position:absolute; top:0; left:0; height:3px; background:var(--accent); width:0%;
-    transition:width .5s ease; }
-  .ruler-track{ position:absolute; top:0; left:0; right:0; height:3px; background:var(--line-soft); }
-  .ruler-ticks{ position:absolute; top:3px; left:0; right:0; height:17px; }
-  .tick{ position:absolute; top:0; width:1px; height:7px; background:var(--line-soft); }
-  .tick span{ position:absolute; top:8px; left:3px; font-family:var(--font-mono); font-size:8px;
-    color:var(--ink-soft); white-space:nowrap; letter-spacing:.02em; }
-
-  .stage{ position:absolute; top:20px; left:0; right:0; bottom:42px; }
-  .slide{ position:absolute; inset:0; opacity:0; visibility:hidden; pointer-events:none;
-    transition:opacity .4s ease; padding:clamp(16px,3.6vw,46px); }
-  .slide.active{ opacity:1; visibility:visible; pointer-events:auto; }
-
-  .crop{ position:absolute; width:13px; height:13px; opacity:.5; }
-  .crop.tl{ top:7px; left:7px; border-top:1px solid var(--line); border-left:1px solid var(--line); }
-  .crop.tr{ top:7px; right:7px; border-top:1px solid var(--line); border-right:1px solid var(--line); }
-  .crop.bl{ bottom:7px; left:7px; border-bottom:1px solid var(--line); border-left:1px solid var(--line); }
-  .crop.br{ bottom:7px; right:7px; border-bottom:1px solid var(--line); border-right:1px solid var(--line); }
-
-  .sheet-label{ position:absolute; top:9px; left:26px; font-family:var(--font-mono);
-    font-size:clamp(8px,.9vw,10px); letter-spacing:.08em; color:var(--ink-soft); opacity:.8; }
-
-  .slide-content{ height:100%; display:flex; flex-direction:column; justify-content:center; gap:clamp(8px,1.3vh,16px); }
-  .slide-content.center{ align-items:center; text-align:center; }
-
-  .eyebrow{ font-family:var(--font-mono); font-size:clamp(10px,1vw,12px); letter-spacing:.16em;
-    color:var(--accent); text-transform:uppercase; margin:0; }
-  h1,h2{ margin:0; font-family:var(--font-display); font-weight:800; color:var(--ink); text-wrap:balance; }
-  h1.huge{ font-size:clamp(26px,4.8vw,52px); line-height:1.14; }
-  h2{ font-size:clamp(19px,2.9vw,32px); line-height:1.22; }
-  .accent{ color:var(--accent); }
-  .subhead{ font-size:clamp(13px,1.5vw,18px); color:var(--ink-soft); max-width:640px; margin:0; }
-  .footnote{ font-size:clamp(11px,1.2vw,13px); color:var(--ink-soft); margin:4px 0 0; }
-  p{ margin:0; }
-
-  .reveal{ opacity:0; transform:translateY(12px); transition:opacity .5s ease, transform .5s ease; }
-  .reveal.in{ opacity:1; transform:translateY(0); }
-  .draw{ transform:scaleY(0); transform-origin:top; transition:transform .5s ease; }
-  .draw.in{ transform:scaleY(1); }
-  .draw-h{ transform:scaleX(0); transform-origin:left; transition:transform .5s ease; }
-  .draw-h.in{ transform:scaleX(1); }
-
-  .card-row{ display:flex; gap:clamp(9px,1.4vw,18px); flex-wrap:wrap; }
-  .card{ flex:1 1 210px; border:1px solid var(--line-soft); background:var(--card-bg); border-radius:3px;
-    padding:clamp(10px,1.4vw,16px); position:relative; }
-  .card-mark{ font-family:var(--font-mono); font-size:11px; color:var(--accent); letter-spacing:.06em; }
-  .card p{ margin-top:6px; font-size:clamp(12px,1.35vw,15px); color:var(--ink); line-height:1.45; }
-
-  .node{ border:1px solid var(--line); background:var(--sheet-bg); border-radius:3px;
-    padding:6px 12px; font-size:clamp(11px,1.25vw,13px); font-weight:600; white-space:nowrap; text-align:center; }
-  .node .tag{ display:block; font-family:var(--font-mono); font-weight:400; font-size:9px;
-    color:var(--ink-soft); letter-spacing:.04em; margin-top:2px; white-space:normal; }
-
-  .flow-grid{ display:flex; flex-direction:column; align-items:center; gap:10px; }
-  .flow-row{ display:flex; align-items:center; gap:6px; justify-content:center; flex-wrap:nowrap; }
-  .flow-arrow{ width:22px; height:1px; background:var(--line); flex:0 0 auto; position:relative; }
-  .flow-arrow::after{ content:""; position:absolute; right:0; top:-3px; width:0; height:0;
-    border-top:3px solid transparent; border-bottom:3px solid transparent; border-left:5px solid var(--line); }
-  .flow-arrow.iterate{ background-image:repeating-linear-gradient(90deg, var(--accent) 0 4px, transparent 4px 8px);
-    background-color:transparent; }
-  .flow-arrow.iterate::after{ border-left-color:var(--accent); }
-  .flow-down{ width:1px; height:12px; background:var(--line); }
-  .tagline{ font-size:clamp(11px,1.25vw,14px); color:var(--ink-soft); max-width:680px; text-align:center; }
-
-  .role-row{ display:flex; align-items:center; gap:clamp(8px,1.4vw,16px); }
-  .role-arrow{ height:1px; flex:1; background:var(--line); transform:scaleX(0); transform-origin:left;
-    transition:transform .5s ease; position:relative; min-width:26px; }
-  .role-arrow.in{ transform:scaleX(1); }
-  .role-arrow::after{ content:""; position:absolute; right:0; top:-3px; width:0; height:0;
-    border-top:4px solid transparent; border-bottom:4px solid transparent; border-left:6px solid var(--line); }
-  .role-rows{ display:flex; flex-direction:column; gap:12px; width:100%; max-width:540px; }
-
-  .panels{ display:flex; gap:clamp(9px,1.4vw,20px); flex-wrap:wrap; }
-  .panel{ flex:1 1 240px; border:1px solid var(--line-soft); border-radius:4px; padding:clamp(10px,1.4vw,16px);
-    background:var(--card-bg); position:relative; }
-  .panel-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
-  .panel-head h3{ font-family:var(--font-display); font-size:clamp(13px,1.6vw,16px); margin:0; font-weight:800; }
-  .badge{ font-family:var(--font-mono); font-size:10px; background:var(--accent); color:var(--accent-ink);
-    padding:2px 6px; border-radius:2px; letter-spacing:.04em; }
-  .panel ul{ margin:0; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:5px; }
-  .panel li{ font-size:clamp(11px,1.25vw,13px); color:var(--ink); display:flex; gap:7px; }
-  .panel li::before{ content:"›"; color:var(--accent); font-weight:700; }
-
-  .compare{ display:flex; gap:clamp(9px,1.4vw,18px); flex-wrap:wrap; }
-  .compare .panel.vague{ border-style:dashed; opacity:.85; }
-  .compare .panel.clear{ border-color:var(--accent); }
-  .compare li.miss{ color:var(--ink-soft); text-decoration:line-through; }
-  .compare li.miss::before{ content:"✕"; color:var(--ink-soft); }
-  .compare li.have::before{ content:"✓"; color:var(--accent); }
-
-  .agents{ display:flex; flex-direction:column; align-items:center; }
-  .agent-row{ display:flex; gap:clamp(12px,2.2vw,30px); margin:10px 0; }
-  .agent-node .node{ font-size:clamp(10px,1.15vw,12px); }
-  .agents .connector{ width:1px; height:16px; background:var(--line); }
-
-  .checklist{ display:grid; grid-template-columns:repeat(2,minmax(190px,1fr)); gap:clamp(8px,1.4vw,16px); }
-  @media (max-width:560px){ .checklist{ grid-template-columns:1fr; } }
-  .check-item{ display:flex; gap:9px; align-items:flex-start; }
-  .check-box{ width:14px; height:14px; border:1px solid var(--line); flex:0 0 auto; margin-top:3px; position:relative; }
-  .check-box::after{ content:""; position:absolute; left:2px; top:-1px; width:4px; height:8px;
-    border-right:2px solid var(--accent); border-bottom:2px solid var(--accent); transform:rotate(35deg) scale(0);
-    transition:transform .3s ease .1s; }
-  .check-item.in .check-box::after{ transform:rotate(35deg) scale(1); }
-  .check-item b{ font-size:clamp(12px,1.35vw,14px); }
-  .check-item span{ display:block; font-size:clamp(10px,1.15vw,12px); color:var(--ink-soft); margin-top:1px; }
-
-  .stamp{ align-self:center; border:2px solid var(--accent); color:var(--accent); border-radius:6px;
-    padding:10px 22px; font-family:var(--font-mono); font-weight:700; letter-spacing:.06em;
-    transform:rotate(-3deg); font-size:clamp(12px,1.5vw,15px); text-decoration:none; cursor:pointer; }
-  .stamp:hover{ background:var(--accent); color:var(--accent-ink); }
-  .stamp:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
-  .cta-foot{ font-family:var(--font-mono); font-size:clamp(10px,1.2vw,12px); color:var(--ink-soft); }
-
-  .slide.divider .slide-content{ position:relative; }
-  .divider-num{ font-family:var(--font-mono); font-size:clamp(50px,11vw,110px); color:var(--line-soft);
-    opacity:.4; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    z-index:0; pointer-events:none; user-select:none; }
-  .divider-line{ width:80px; height:2px; background:var(--accent); position:relative; z-index:1; }
-
-  .nav-btn{ position:absolute; bottom:54px; width:28px; height:28px; border-radius:50%;
-    border:1px solid var(--line-soft); background:var(--sheet-bg); color:var(--ink); display:flex;
-    align-items:center; justify-content:center; cursor:pointer; font-size:13px; z-index:6; opacity:.7;
-    transition:opacity .2s ease; }
-  .nav-btn:hover{ opacity:1; }
-  .nav-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
-  .nav-btn.prev{ left:10px; } .nav-btn.next{ right:10px; }
-  .hint{ position:absolute; top:6px; right:12px; font-family:var(--font-mono); font-size:9px;
-    color:var(--ink-soft); opacity:.7; z-index:5; }
-
-  .caption-bar{ position:absolute; left:7%; right:7%; bottom:46px; z-index:6; text-align:center;
-    font-size:clamp(11px,1.5vw,14px); line-height:1.4; color:#fdfdfd; pointer-events:none; font-family:var(--font-body); }
-  .caption-bar:not(:empty){ background:rgba(6,14,22,.68); padding:6px 12px; border-radius:3px; }
-
-  .control-bar{ position:absolute; left:0; right:0; bottom:0; min-height:42px; display:flex; align-items:center;
-    justify-content:space-between; gap:8px; padding:5px 12px; background:var(--sheet-bg);
-    border-top:1px solid var(--line-soft); z-index:6; flex-wrap:wrap; }
-  .title-block{ font-family:var(--font-mono); font-size:8.5px; line-height:1.35; color:var(--ink-soft);
-    letter-spacing:.02em; }
-  .title-block span{ opacity:.75; }
-  .controls{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-  .ctrl-btn{ font-family:var(--font-mono); font-size:10.5px; padding:4px 9px; border:1px solid var(--line-soft);
-    background:var(--card-bg); color:var(--ink); border-radius:2px; cursor:pointer; }
-  .ctrl-btn:hover{ border-color:var(--line); }
-  .ctrl-btn[aria-pressed="false"]{ opacity:.55; }
-  .ctrl-btn:disabled{ opacity:.35; cursor:not-allowed; }
-  .ctrl-btn:focus-visible, .lang-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
-  .lang-toggle{ display:flex; border:1px solid var(--line-soft); border-radius:2px; overflow:hidden; }
-  .lang-btn{ font-family:var(--font-mono); font-size:10px; padding:4px 8px; border:none; background:transparent;
-    color:var(--ink-soft); cursor:pointer; }
-  .lang-btn.active{ background:var(--accent); color:var(--accent-ink); }
-  .hud{ display:flex; gap:12px; font-family:var(--font-mono); font-size:9.5px; color:var(--ink-soft);
-    font-variant-numeric:tabular-nums; white-space:nowrap; }
-
-  @media (prefers-reduced-motion: reduce){
-    .slide, .reveal, .draw, .draw-h, .role-arrow{ transition:none !important; }
-  }
-</style>
-
-<div class="wrap">
-<div class="deck" id="deck" tabindex="0" aria-label="工作坊行銷簡報，共十三頁">
-
-  <div class="ruler">
-    <div class="ruler-track"></div>
-    <div class="ruler-fill" id="rulerFill"></div>
-    <div class="ruler-ticks" id="rulerTicks"></div>
-  </div>
-  <div class="hint">點擊畫面／空白鍵／→ 繼續　←上一頁</div>
-
-  <div class="stage" id="stage">
-
-    <section class="slide" data-dur="40">
-      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
-      <div class="sheet-label">SHEET 01 / 13 — 簡報藍圖</div>
-      <div class="slide-content center">
-        <p class="eyebrow reveal">教師 AI 產品開發工作坊</p>
-        <h1 class="huge reveal">當老師變成<br><span class="accent">PM / PjM</span></h1>
-        <p class="subhead reveal">用 AI-native 流程，打造你自己的課程數位產品</p>
-      </div>
-    </section>
-
-    <section class="slide divider" data-dur="15">
-      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
-      <div class="sheet-label">SHEET 02 / 13 — 章節</div>
-      <div class="slide-content center">
-        <div class="divider-num">01</div>
-        <p class="eyebrow reveal" style="position:relative;z-index:1;">PART ONE</p>
-        <h2 class="reveal" style="position:relative;z-index:1;">為什麼需要新的做法</h2>
-        <div class="divider-line draw-h"></div>
-      </div>
-    </section>
-
-    <section class="slide" data-dur="50">
-      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
-      <div class="sheet-label">SHEET 03 / 13 — 問題定義</div>
-      <div class="slide-content">
-        <p class="eyebrow reveal">現場的三個卡點</p>
-        <h2 class="reveal">你是不是也遇過這些狀況？</h2>
-        <div class="card-row">
-          <div class="card reveal"><span class="card-mark">01</span><p>全英語授課，學生課後看不懂教材，卻不敢發問</p></div>
-          <div class="card reveal"><span class="card-mark">02</span><p>老師沒有時間逐一回覆重複性的問題</p></div>
-          <div class="card reveal"><span class="card-mark">03</span><p>系所想追蹤學習成效，卻沒有合適的工具</p></div>
-        </div>
-        <p class="footnote reveal">過去的解法：找工程師、找廠商，然後開始漫長的等待。</p>
-      </div>
-    </section>
-
-    <section class="slide" data-dur="70">
-      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
-      <div class="sheet-label">SHEET 04 / 13 — 核心洞察</div>
-      <div class="slide-content">
-        <p class="eyebrow reveal">核心洞察</p>
-        <h2 class="reveal">六層架構，重新定義開發流程</h2>
-        <div class="flow-grid">
-          <div class="flow-row">
-            <div class="node reveal">Customer Needs<span class="tag">為什麼要做</span></div>
-            <div class="flow-arrow draw-h"></div>
-            <div class="node reveal">Product Goals<span class="tag">要達成什麼結果</span></div>
-            <div class="flow-arrow draw-h"></div>
-            <div class="node reveal">Open Spec<span class="tag">系統必須做什麼</span></div>
-          </div>
-          <div class="flow-down draw"></div>
-          <div class="flow-row">
-            <div class="node reveal">Architecture / Graphiti<span class="tag">彼此如何連結</span></div>
-            <div class="flow-arrow iterate draw-h"></div>
-            <div class="node reveal">Schema<span class="tag">資料長什麼樣</span></div>
-            <div class="flow-arrow draw-h"></div>
-            <div class="node reveal" style="border-color:var(--accent); color:var(--accent);">AI Coding → Production<span class="tag" style="color:var(--accent);">誰把它寫出來</span></div>
-          </div>
-        </div>
-        <p class="footnote reveal" style="text-align:center;">虛線處：Graphiti 與 Schema 互相疊代</p>
-        <p class="tagline reveal" style="margin:0 auto;">Spec 決定做什麼・Graphiti 決定怎麼組裝・Schema 決定資料長怎樣・AI Agent 負責寫出來</p>
-      </div>
-    </section>
-
-    <section class="slide" data-dur="50">
-      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
-      <div class="sheet-label">SHEET 05 / 13 — 角色轉換</div>
-      <div class="slide-content">
-        <p class="eyebrow reveal">角色轉換</p>
-        <h2 class="reveal">老師不用寫程式，一樣能主導開發</h2>
-        <div class="role-rows">
-          <div class="role-row">
-            <div class="node reveal" style="min-width:100px;">老師</div>
-            <div class="role-arrow"></div>
-            <div class="node reveal" style="min-width:160px; border-color:var(--accent); color:var(--accent);">Product Manager<br>+ Project Manager</div>
-          </div>
-          <div class="role-row">
-            <div class="node reveal" style="min-width:100px;">TA／協作教師</div>
-            <div class="role-arrow"></div>
-            <div class="node reveal" style="min-width:160px;">Vibe Coder</div>
-          </div>
-          <div class="role-row">
-            <div class="node reveal" style="min-width:100px;">Claude Code</div>
-            <div class="role-arrow"></div>
-            <div class="node reveal" style="min-width:160px;">Implementer</div>
-          </div>
-        </div>
-        <p class="footnote reveal">你不需要學程式語言，你只需要學會怎麼把教學需求說清楚。</p>
-      </div>
-    </section>
-
-    <section class="slide divider" data-dur="15">
-      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
-      <div class="sheet-label">SHEET 06 / 13 — 章節</div>
-      <div class="slide-content center">
-        <div class="divider-num">02</div>
-        <p class="eyebrow reveal" style="position:relative;z-index:1;">PART TWO</p>
-        <h2 class="reveal" style="position:relative;z-index:1;">實際上怎麼做</h2>
-        <div class="divider-line draw-h"></div>
-      </div>
-    </section>
-
-    <section class="slide" data-dur="68">
-      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
-      <div class="sheet-label">SHEET 07 / 13 — 工作坊架構</div>
-      <div class="slide-content">
-        <p class="eyebrow reveal">工作坊架構</p>
-        <h2 class="reveal">基礎 6 小時 ＋ 實施 6 小時</h2>
-        <div class="panels">
-          <div class="panel reveal">
-            <div class="panel-head"><h3>基礎模組</h3><span class="badge">6 HR</span></div>
-            <ul>
-              <li>Customer Needs → Product Goals</li>
-              <li>Open Spec（使用者故事）</li>
-              <li>Graphiti + Schema</li>
-              <li>Agile / PjM 必要概念導入</li>
-            </ul>
-          </div>
-          <div class="panel reveal">
-            <div class="panel-head"><h3>實施模組</h3><span class="badge">6 HR</span></div>
-            <ul>
-              <li>Claude Code 入門</li>
-              <li>Vibe Coding 實作</li>
-              <li>多重代理人協作</li>
-              <li>交接文件 + 團隊演練 + 回顧會</li>
-            </ul>
-          </div>
-        </div>
-        <p class="footnote reveal">⚡ 快速精華版：基礎模組 3HR ＋ 實施模組 3HR，適合時間有限的場次</p>
-      </div>
-    </section>
-
-    <section class="slide" data-dur="70">
-      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
-      <div class="sheet-label">SHEET 08 / 13 — 真實案例</div>
-      <div class="slide-content">
-        <p class="eyebrow reveal">真實案例</p>
-        <h2 class="reveal">駱世民教授的 EMI 課程實測</h2>
-        <p class="footnote reveal">「國際策略管理（SMMC）」雙語 AI 助教原型</p>
-        <div class="compare">
-          <div class="panel clear reveal">
-            <div class="panel-head"><h3>規格清楚</h3></div>
-            <ul>
-              <li class="have">中英雙語提問與回覆</li>
-              <li class="have">對話全部紀錄可匯出</li>
-              <li class="have">不確定時明確告知</li>
-            </ul>
-          </div>
-          <div class="panel vague reveal">
-            <div class="panel-head"><h3>規格模糊</h3></div>
-            <ul>
-              <li class="miss">沒有雙語</li>
-              <li class="miss">沒有對話紀錄</li>
-              <li class="miss">會亂編答案</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="slide" data-dur="50">
-      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
-      <div class="sheet-label">SHEET 09 / 13 — 進階做法</div>
-      <div class="slide-content" style="align-items:center;">
-        <p class="eyebrow reveal">進階做法</p>
-        <h2 class="reveal">一句話，派出多個 AI 代理人</h2>
-        <div class="agents">
-          <div class="node reveal">Claude Code（主對話）</div>
-          <div class="connector draw"></div>
-          <div class="agent-row">
-            <div class="agent-node"><div class="node reveal">探索型</div></div>
-            <div class="agent-node"><div class="node reveal">實作型</div></div>
-            <div class="agent-node"><div class="node reveal">審查型</div></div>
-          </div>
-          <div class="connector draw"></div>
-          <div class="node reveal" style="border-color:var(--accent); color:var(--accent);">彙整結果</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="slide divider" data-dur="15">
-      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
-      <div class="sheet-label">SHEET 10 / 13 — 章節</div>
-      <div class="slide-content center">
-        <div class="divider-num">03</div>
-        <p class="eyebrow reveal" style="position:relative;z-index:1;">PART THREE</p>
-        <h2 class="reveal" style="position:relative;z-index:1;">你會帶走什麼、為什麼是現在</h2>
-        <div class="divider-line draw-h"></div>
-      </div>
-    </section>
-
-    <section class="slide" data-dur="50">
-      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
-      <div class="sheet-label">SHEET 11 / 13 — 帶走的東西</div>
-      <div class="slide-content">
-        <p class="eyebrow reveal">帶走的東西</p>
-        <h2 class="reveal">不只是一場工作坊</h2>
-        <div class="checklist">
-          <div class="check-item reveal"><div class="check-box"></div><div><b>完整規格包</b><span>Needs / Goals / Spec / Graphiti / Schema</span></div></div>
-          <div class="check-item reveal"><div class="check-box"></div><div><b>可運作原型</b><span>用 Claude Code 實際做出來</span></div></div>
-          <div class="check-item reveal"><div class="check-box"></div><div><b>交接文件</b><span>TA 或協作教師可直接接手</span></div></div>
-          <div class="check-item reveal"><div class="check-box"></div><div><b>團隊協作能力</b><span>Agile 節奏、看板、回顧會</span></div></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="slide" data-dur="40">
-      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
-      <div class="sheet-label">SHEET 12 / 13 — 為什麼不一樣</div>
-      <div class="slide-content">
-        <p class="eyebrow reveal">為什麼不一樣</p>
-        <h2 class="reveal">不是教你聊天，是教你定義問題的紀律</h2>
-        <div class="compare">
-          <div class="panel vague reveal">
-            <div class="panel-head"><h3>一般 AI 工具教學</h3></div>
-            <ul><li class="miss">怎麼跟 AI 聊天</li><li class="miss">工具換了就要重學</li></ul>
-          </div>
-          <div class="panel clear reveal">
-            <div class="panel-head"><h3>這場工作坊</h3></div>
-            <ul><li class="have">完整的專案定義紀律</li><li class="have">AI 工具怎麼換都用得上</li></ul>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="slide" data-dur="55">
-      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
-      <div class="sheet-label">SHEET 13 / 13 — 加入我們</div>
-      <div class="slide-content center">
-        <p class="eyebrow reveal">加入我們</p>
-        <h2 class="reveal">把你的教學想法，變成看得到、用得到的東西</h2>
-        <a class="stamp reveal" href="https://www.ilink-hss.org/AIEA" target="_blank" rel="noopener noreferrer">了解報名方式</a>
-        <p class="cta-foot reveal">標準版：基礎 6HR ＋ 實施 6HR　｜　快速精華版：基礎 3HR ＋ 實施 3HR</p>
-      </div>
-    </section>
-
-  </div>
-
-  <button class="nav-btn prev" id="prevBtn" aria-label="上一頁">‹</button>
-  <button class="nav-btn next" id="nextBtn" aria-label="下一頁">›</button>
-  <div class="caption-bar" id="captionBar" aria-live="polite"></div>
-
-  <div class="control-bar">
-    <div class="title-block">Architect: Prof. Shihmin Lo, NCNU<br><span>(All rights reserved)</span></div>
-    <div class="controls">
-      <button id="playBtn" class="ctrl-btn">▶ 播放語音導覽</button>
-      <div class="lang-toggle">
-        <button class="lang-btn active" data-lang="zh" id="langZh" title="偵測中…">中文</button>
-        <button class="lang-btn" data-lang="en" id="langEn" title="偵測中…">EN</button>
-      </div>
-      <button id="ccBtn" class="ctrl-btn" aria-pressed="true">CC 字幕</button>
-    </div>
-    <div class="hud"><span id="hudIndex">01 / 13</span><span id="hudTime">目標 0:00</span></div>
-  </div>
-
-</div>
-</div>
-
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-native 產品開發工作坊教材</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.7/babel.min.js"></script>
 <script>
-(function(){
-  var deck = document.getElementById('deck');
-  var slides = Array.prototype.slice.call(deck.querySelectorAll('.slide'));
-  var durations = slides.map(function(s){ return parseInt(s.getAttribute('data-dur'),10) || 30; });
-  var cumulative = [0];
-  durations.forEach(function(d,i){ cumulative.push(cumulative[i]+d); });
-  var total = cumulative[cumulative.length-1];
-  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  // ---- narration data (zh / en), aligned 1:1 with slide order ----
-  var NARR = [
-    { zh:"你有沒有想過，其實不用會寫程式，你也可以自己主導開發一個課程數位產品？接下來我想跟你分享一套我們設計出來的工作坊——它讓大學教師，不需要任何程式背景，就能扮演產品經理與專案經理的角色，用 AI 把你的教學想法，變成真正能用的數位工具。",
-      en:"Have you ever imagined leading the development of a digital product for your course, without writing a single line of code? I want to share a workshop we designed. It lets university faculty, with zero programming background, take on the role of product manager and project manager, and use AI to turn their teaching ideas into something real." },
-    { zh:"第一部：為什麼需要新的做法。", en:"Part One: why we need a new approach." },
-    { zh:"我們都遇過類似的狀況：EMI 全英語授課，學生課後常常看不懂教材，卻不敢舉手發問；老師想幫忙，卻沒有時間一一回覆重複性的問題；系所也希望能追蹤學生在哪些單元卡關，但手上沒有合適的工具。過去，這些問題的解法通常是——去找工程師、去找廠商，然後開始漫長的溝通與等待。",
-      en:"We've all seen this: in English-medium instruction, students often can't keep up after class but hesitate to ask questions. Instructors don't have time to answer the same questions repeatedly. And departments want to track where students get stuck, but lack the right tool. In the past, the only fix was hiring engineers or vendors, then waiting through long rounds of back and forth." },
-    { zh:"但現在情況不一樣了。AI 時代真正改變的，不是要不要用 AI，而是開發一個數位產品的整個流程。我們把它整理成六層架構：先問為什麼要做，這是 Needs；再問要達成什麼結果，這是 Goals；然後決定系統必須做什麼，這是 Spec；接著畫出彼此怎麼連結，這是 Graphiti；再定義資料長什麼樣，這是 Schema；最後，才是動手實作。用一句話說：Spec 決定做什麼，Graphiti 決定怎麼組裝，Schema 決定資料長怎樣，而 AI Agent 負責把它寫出來。",
-      en:"But things have changed. What AI really transforms isn't whether to use it, it's the entire process of building a digital product. We organized it into six layers: first ask why, that's Needs; then what outcome, that's Goals; then what the system must do, that's Spec; then how things connect, that's Graphiti; then what the data looks like, that's Schema; and only then, implementation. In one sentence: Spec decides what to build, Graphiti decides how it connects, Schema decides what the data looks like, and the AI agent writes it." },
-    { zh:"這代表什麼？代表老師的角色，從不會寫程式所以做不了，變成負責定義要做什麼、怎麼組裝、資料長怎樣的產品經理與專案經理。真正動手把程式碼寫出來的，是 AI，具體來說，是 Claude Code。你不需要學程式語言，你只需要學會怎麼把你的教學需求說清楚。",
-      en:"This means the instructor's role shifts, from 'I can't code, so I can't build this' to 'I define what to build, how it connects, and what the data looks like,' acting as both product manager and project manager. The one actually writing the code is AI, specifically Claude Code. You don't need to learn a programming language. You just need to learn how to state your teaching needs clearly." },
-    { zh:"第二部：實際上怎麼做。", en:"Part Two: how it actually works." },
-    { zh:"所以我們設計了一套工作坊，分成兩個模組，各六小時。基礎模組，完全不需要碰任何 AI 工具，專注在把你的教學想法，一層一層轉譯成清楚的規格，同時導入 Agile 專案管理的必要概念，像是看板、衝刺、完成的定義。實施模組，才正式開始動手，用 Claude Code 把規格變成真正能運作的原型，還會學到怎麼把工作拆給多個 AI 代理人同時處理，加快速度。如果時間有限，我們也準備了快速精華版：基礎模組三小時，實施模組三小時，一樣可以完整走過六層架構。",
-      en:"So we designed a workshop in two six-hour modules. The Foundations module needs no AI tools at all, it focuses on translating your teaching ideas, layer by layer, into a clear specification, while introducing essential Agile concepts like Kanban boards, sprints, and definition of done. The Implementation module is where the hands-on work begins, using Claude Code to turn the spec into a working prototype, and learning to delegate tasks to multiple AI agents running in parallel. If time is limited, we also offer a condensed track: three hours of foundations and three hours of implementation, still covering the full six-layer framework." },
-    { zh:"這不是紙上談兵。我們實際用一個真實案例走過一次——駱世民教授的 EMI 課程，國際策略管理。學生英語授課常跟不上，老師沒時間逐一解惑。我們把需求一層一層寫成規格，交給 Claude Code，很快就做出一個雙語 AI 助教的原型。更關鍵的是，我們還故意示範了一次，如果規格寫得模糊，AI 做出來的東西會少了什麼。這個對比，讓在場的老師親眼看到：規格的清晰度，直接決定了 AI 產出的品質。",
-      en:"This isn't just theory. We walked through a real case, Professor Shihmin Lo's EMI course, Strategic Management of Multinational Corporations. Students struggled to keep up in English, and the instructor had no time to answer every question. We wrote the requirements layer by layer, handed them to Claude Code, and quickly had a working bilingual AI teaching assistant prototype. Just as important, we deliberately ran it again with a vague spec, so everyone could see exactly what a clear specification changes." },
-    { zh:"更進階一點，當專案有好幾件事要同時做，比如課程頁面、AI 助教、還有學習報表，我們也會教老師怎麼用一句話，請 Claude Code 同時派出好幾個 AI 代理人平行處理，甚至互相審查彼此的成果。老師不需要懂任何技術細節，只需要學會判斷：哪些工作可以同時做，哪些工作有先後順序。",
-      en:"One step further: when a project has several things to build at once, a course page, an AI assistant, a learning report, we also teach instructors how to ask Claude Code, in one sentence, to dispatch multiple AI agents in parallel, and even have them review each other's work. No technical detail required, just the judgment to know what can run in parallel, and what has to wait its turn." },
-    { zh:"第三部：你會帶走什麼、為什麼是現在。", en:"Part Three: what you'll take away, and why now." },
-    { zh:"完成這套工作坊，你會帶走的不只是一場工作坊的回憶，而是四樣實際的東西：一份完整的專案規格包、一個真正可以運作的原型、一份可以直接交給 TA 或協作教師的交接文件、還有一套帶團隊做 AI 專案的協作方法。",
-      en:"By the end of this workshop, you won't just walk away with a memory of the session, you'll walk away with four concrete things: a complete project specification, a working prototype, a handoff document your TA or co-instructor can pick up directly, and a method for leading a team through an AI-native project." },
-    { zh:"這跟坊間很多 AI 工具教學不一樣。我們不是教你怎麼跟 AI 聊天，而是教你一套完整的專案定義紀律，這套紀律，不管 AI 工具怎麼換，都會一直有用。",
-      en:"This is different from most AI tool tutorials out there. We're not teaching you how to chat with AI, we're teaching you a complete discipline for defining problems. And that discipline keeps working no matter which AI tool comes next." },
-    { zh:"如果你也想讓自己的課程，變成一個真正能用的數位產品，而且完全不需要先學程式，歡迎加入這場工作坊。基礎模組六小時，實施模組六小時；如果時間有限，也有三小時加三小時的快速精華版，一起把你的教學想法，變成看得到、用得到的東西。",
-      en:"If you want to turn your course into a real, working digital product, without learning to code first, join this workshop. Six hours of foundations, six hours of implementation, or a condensed three-plus-three track if time is tight. Let's turn your teaching ideas into something you can see, and something your students can use." }
-  ];
-
-  // ---- ruler ticks ----
-  var ticks = document.getElementById('rulerTicks');
-  cumulative.forEach(function(c,i){
-    var t = document.createElement('div');
-    t.className = 'tick';
-    t.style.left = (c/total*100) + '%';
-    if(i < slides.length){
-      var lbl = document.createElement('span');
-      lbl.textContent = fmt(c);
-      t.appendChild(lbl);
-    }
-    ticks.appendChild(t);
-  });
-  function fmt(sec){ var m=Math.floor(sec/60), s=sec%60; return m+':'+(s<10?'0':'')+s; }
-
-  // ---- slide navigation ----
-  var current = 0;
-  var rulerFill = document.getElementById('rulerFill');
-  var hudIndex = document.getElementById('hudIndex');
-  var hudTime = document.getElementById('hudTime');
-  var captionBar = document.getElementById('captionBar');
-
-  function playReveal(idx){
-    var s = slides[idx];
-    var items = s.querySelectorAll('.reveal, .draw, .draw-h');
-    items.forEach(function(el, i){
-      el.classList.remove('in');
-      void el.offsetWidth;
-      var delay = reduced ? 0 : i*70;
-      setTimeout(function(){ el.classList.add('in'); }, delay);
-    });
+  tailwind.config = {
+    darkMode: 'class',
+    theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], serif: ['Merriweather','serif'] } } }
   }
-
-  function goTo(idx, opts){
-    idx = Math.max(0, Math.min(slides.length-1, idx));
-    slides[current].classList.remove('active');
-    current = idx;
-    slides[current].classList.add('active');
-    playReveal(current);
-    rulerFill.style.width = (cumulative[current]/total*100) + '%';
-    hudIndex.textContent = String(current+1).padStart(2,'0') + ' / ' + slides.length;
-    hudTime.textContent = '目標 ' + fmt(cumulative[current]);
-    if(!(opts && opts.keepCaption)) captionBar.textContent = '';
-  }
-
-  document.getElementById('prevBtn').addEventListener('click', function(e){ e.stopPropagation(); stopNarration(); goTo(current-1); });
-  document.getElementById('nextBtn').addEventListener('click', function(e){ e.stopPropagation(); stopNarration(); goTo(current+1); });
-  deck.addEventListener('click', function(e){
-    if(e.target.closest('.nav-btn') || e.target.closest('.control-bar') || e.target.closest('a')) return;
-    stopNarration();
-    goTo(current+1);
-  });
-  window.addEventListener('keydown', function(e){
-    if(e.key === 'ArrowRight' || e.key === ' '){ e.preventDefault(); stopNarration(); goTo(current+1); }
-    else if(e.key === 'ArrowLeft'){ e.preventDefault(); stopNarration(); goTo(current-1); }
-  });
-
-  // ---- narration / speech synthesis ----
-  var supported = 'speechSynthesis' in window;
-  var playBtn = document.getElementById('playBtn');
-  var ccBtn = document.getElementById('ccBtn');
-  var langZh = document.getElementById('langZh');
-  var langEn = document.getElementById('langEn');
-  var currentLang = 'zh';
-  var captionsOn = true;
-  var isPlaying = false;
-  var voicesCache = [];
-  var playToken = 0;
-  var currentUtterance = null;
-  var keepAliveId = null;
-
-  function startKeepAlive(){
-    stopKeepAlive();
-    keepAliveId = setInterval(function(){
-      if(supported && window.speechSynthesis.speaking){
-        window.speechSynthesis.pause();
-        window.speechSynthesis.resume();
-      }
-    }, 4000);
-  }
-  function stopKeepAlive(){ if(keepAliveId){ clearInterval(keepAliveId); keepAliveId = null; } }
-
-  function loadVoices(){
-    voicesCache = supported ? window.speechSynthesis.getVoices() : [];
-    refreshVoiceLabels();
-    if(voicesCache.length > 0 && playBtn.disabled && supported){
-      playBtn.disabled = false;
-      playBtn.textContent = '▶ 播放語音導覽';
-      playBtn.title = '';
-    }
-  }
-  if(supported){
-    loadVoices();
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-    // Some sandboxed / server-side preview environments have zero installed TTS voices —
-    // speechSynthesis exists but getVoices() stays permanently empty, so speak() never
-    // produces audio no matter what the code does. Detect that and say so honestly,
-    // instead of leaving a play button that silently does nothing.
-    setTimeout(function(){
-      if(voicesCache.length === 0){
-        playBtn.disabled = true;
-        playBtn.textContent = '此環境無可用語音（請在你自己的瀏覽器開啟）';
-        playBtn.title = '目前瀏覽環境沒有偵測到任何語音合成引擎，常見於伺服器端或沙盒預覽環境，並非簡報本身的問題。請把這個網頁存到本機，用 Windows／Mac 的桌面瀏覽器（建議 Edge 或 Chrome）直接開啟，語音功能就會正常運作。';
-      }
-    }, 900);
-  } else {
-    playBtn.disabled = true;
-    playBtn.textContent = '此環境不支援語音朗讀';
-  }
-
-  function pickVoice(lang){
-    var pool = voicesCache;
-    if(!pool.length) return null;
-    if(lang==='zh'){
-      return pool.find(function(v){ return /yating|hsiaoyu/i.test(v.name); })
-        || pool.find(function(v){ return /zh-TW/i.test(v.lang); })
-        || pool.find(function(v){ return /^zh/i.test(v.lang); })
-        || null;
-    } else {
-      return pool.find(function(v){ return /(ryan|daniel|george|arthur)/i.test(v.name) && /en-GB/i.test(v.lang); })
-        || pool.find(function(v){ return /en-GB/i.test(v.lang) && /male/i.test(v.name); })
-        || pool.find(function(v){ return /en-GB/i.test(v.lang); })
-        || pool.find(function(v){ return /^en/i.test(v.lang); })
-        || null;
-    }
-  }
-
-  function refreshVoiceLabels(){
-    var vz = pickVoice('zh'), ve = pickVoice('en');
-    langZh.title = vz ? ('偵測到：' + vz.name) : '未偵測到 Yating，將以系統預設中文語音朗讀';
-    langEn.title = ve ? ('偵測到：' + ve.name) : '未偵測到英式男聲，將以系統預設英語語音朗讀';
-  }
-
-  function setLang(lang){
-    currentLang = lang;
-    langZh.classList.toggle('active', lang==='zh');
-    langEn.classList.toggle('active', lang==='en');
-    if(isPlaying){ stopNarration(); playFrom(current); }
-  }
-  langZh.addEventListener('click', function(e){ e.stopPropagation(); setLang('zh'); });
-  langEn.addEventListener('click', function(e){ e.stopPropagation(); setLang('en'); });
-
-  ccBtn.addEventListener('click', function(e){
-    e.stopPropagation();
-    captionsOn = !captionsOn;
-    ccBtn.setAttribute('aria-pressed', String(captionsOn));
-    if(!captionsOn) captionBar.textContent = '';
-  });
-
-  function splitSentences(text, lang){
-    var re = lang==='zh' ? /[^。！？]+[。！？]?/g : /[^.!?]+[.!?]?/g;
-    var m = text.match(re);
-    return (m || [text]).map(function(s){ return s.trim(); }).filter(Boolean);
-  }
-
-  // Speak one sentence with a watchdog: some browsers (notably Chrome) can silently
-  // drop a queued utterance, or stop firing events after ~15s of continuous speech.
-  // The watchdog guarantees we always move on, so the deck never gets stuck.
-  function speakOne(text, myToken, done){
-    if(myToken !== playToken) return;
-    var utt = new SpeechSynthesisUtterance(text);
-    currentUtterance = utt; // keep a live reference so it isn't garbage-collected mid-speech
-    var v = pickVoice(currentLang);
-    if(v) utt.voice = v;
-    utt.lang = currentLang==='zh' ? 'zh-TW' : 'en-GB';
-    utt.rate = 1.0;
-    if(captionsOn) captionBar.textContent = text;
-    var settled = false;
-    var watchdogId = setTimeout(function(){ settle(); }, Math.max(1800, text.length * 140));
-    function settle(){
-      if(settled) return;
-      settled = true;
-      clearTimeout(watchdogId);
-      if(myToken !== playToken) return;
-      done();
-    }
-    utt.onend = settle;
-    utt.onerror = settle;
-    try{ window.speechSynthesis.speak(utt); }
-    catch(err){ settle(); }
-  }
-
-  function speakSlide(idx, myToken, onDone){
-    var text = NARR[idx][currentLang];
-    var sentences = splitSentences(text, currentLang);
-    var i = 0;
-    function next(){
-      if(myToken !== playToken || !isPlaying) return;
-      if(i >= sentences.length){ onDone(); return; }
-      speakOne(sentences[i], myToken, function(){
-        i++;
-        setTimeout(next, 80); // small buffer between utterances improves reliability
-      });
-    }
-    next();
-  }
-
-  function playFrom(idx){
-    isPlaying = true;
-    var myToken = ++playToken;
-    playBtn.textContent = '⏸ 停止導覽';
-    startKeepAlive();
-    goTo(idx);
-    speakSlide(idx, myToken, function(){
-      if(myToken !== playToken) return;
-      if(idx+1 < slides.length && isPlaying){
-        setTimeout(function(){ if(myToken === playToken) playFrom(idx+1); }, 450);
-      } else {
-        stopNarration();
-      }
-    });
-  }
-
-  function stopNarration(){
-    playToken++; // invalidate any in-flight speech chains so stale callbacks are ignored
-    isPlaying = false;
-    stopKeepAlive();
-    if(supported) window.speechSynthesis.cancel();
-    playBtn.textContent = '▶ 播放語音導覽';
-  }
-
-  playBtn.addEventListener('click', function(e){
-    e.stopPropagation();
-    if(!supported) return;
-    if(isPlaying){ stopNarration(); }
-    else { playFrom(current); }
-  });
-
-  goTo(0);
-})();
 </script>
+<style>
+  @keyframes fadeInUp { from{opacity:0;transform:translateY(15px)} to{opacity:1;transform:translateY(0)} }
+  .animate-fade-in { animation: fadeInUp 0.5s ease-out forwards; }
+  .perspective { perspective: 1000px; }
+  .transform-style-3d { transform-style: preserve-3d; }
+  .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+  .rotate-y-180 { transform: rotateY(180deg); }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+  .dark ::-webkit-scrollbar-thumb { background: #475569; }
+  html { scroll-behavior: smooth; }
+  body { overflow-x: hidden; }
+</style>
+</head>
+<body class="bg-[#f4f4f4] dark:bg-[#121212] text-slate-800 dark:text-slate-200 selection:bg-[#004030] selection:text-white dark:selection:bg-[#D8C3A5] dark:selection:text-[#004030]">
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef } = React;
+
+/* ============ 前端防禦機制 ============ */
+(function(){
+  const ALLOWED = ['', 'localhost', '127.0.0.1', 'claude.ai'];
+  const REDIRECT = 'https://www.ibs.ncnu.edu.tw/index.php/faculty/tenured-professor/299-smlo';
+  if (!ALLOWED.some(d => location.hostname === d || (d && location.hostname.endsWith('.'+d)))) {
+    document.body.innerHTML = '<div style="text-align:center;padding:60px;font-family:sans-serif"><h1>Access Denied</h1><p>This resource is not authorised on this domain.</p></div>';
+    setTimeout(() => location.href = REDIRECT, 3000);
+  }
+  if (window.self !== window.top) {
+    try { window.top.location.href = window.self.location.href; }
+    catch(e) { /* cross-origin, leave iframe as-is */ }
+  }
+})();
+
+/* ============ 答案混淆層 ============ */
+const _SALT = 'ASW2026';
+const _e = (s, n) => {
+  const p = s + ':' + n;
+  let r = '';
+  for (let i = 0; i < p.length; i++) r += String.fromCharCode(p.charCodeAt(i) ^ ((i + 7) * 3 & 0xFF));
+  return btoa(r);
+};
+const _d = (token) => {
+  const decoded = atob(token);
+  let r = '';
+  for (let i = 0; i < decoded.length; i++) r += String.fromCharCode(decoded.charCodeAt(i) ^ ((i + 7) * 3 & 0xFF));
+  return parseInt(r.split(':')[1], 10);
+};
+const _A0=_e(_SALT,0), _A1=_e(_SALT,1), _A2=_e(_SALT,2), _A3=_e(_SALT,3);
+
+/* ============ 輸入驗證 ============ */
+const sanitizeStudentId = (v) => v.replace(/[^0-9A-Za-z]/g, '').slice(0, 12);
+const sanitizeName = (v) => v.replace(/[<>"'&\\]/g, '').slice(0, 50);
+
+/* ============ 智慧型右鍵 / 快捷鍵攔截 ============ */
+let _toastFn = null;
+document.addEventListener('contextmenu', e => {
+  const selection = window.getSelection().toString().trim();
+  const isImage = e.target.tagName === 'IMG' || e.target.closest('svg');
+  if (selection.length > 0) return;
+  if (isImage) { e.preventDefault(); if(_toastFn) _toastFn(); return; }
+  e.preventDefault(); if(_toastFn) _toastFn();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'F12') { e.preventDefault(); if(_toastFn) _toastFn(); return; }
+  if (e.ctrlKey && e.key.toLowerCase() === 'u') { e.preventDefault(); if(_toastFn) _toastFn(); return; }
+  if (e.ctrlKey && e.shiftKey && ['i','j','c'].includes(e.key.toLowerCase())) { e.preventDefault(); if(_toastFn) _toastFn(); return; }
+});
+document.addEventListener('dragstart', e => {
+  if (e.target.tagName === 'IMG' || e.target.closest('svg')) e.preventDefault();
+});
+
+/* ============ SVG Icons ============ */
+const Icon = ({ children, size=20, className='' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+    strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
+);
+const IconBookOpen = (p) => <Icon {...p}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></Icon>;
+const IconAlertTriangle = (p) => <Icon {...p}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></Icon>;
+const IconCheckCircle = (p) => <Icon {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></Icon>;
+const IconGlobe = (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></Icon>;
+const IconChevronRight = (p) => <Icon {...p}><polyline points="9 18 15 12 9 6"/></Icon>;
+const IconChevronUp = (p) => <Icon {...p}><polyline points="18 15 12 9 6 15"/></Icon>;
+const IconMenu = (p) => <Icon {...p}><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></Icon>;
+const IconX = (p) => <Icon {...p}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></Icon>;
+const IconMoon = (p) => <Icon {...p}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></Icon>;
+const IconSun = (p) => <Icon {...p}><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></Icon>;
+const IconPlay = (p) => <Icon {...p}><polygon points="5 3 19 12 5 21 5 3"/></Icon>;
+const IconPause = (p) => <Icon {...p}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></Icon>;
+const IconSquare = (p) => <Icon {...p}><rect x="4" y="4" width="16" height="16" rx="1"/></Icon>;
+const IconArrowRight = (p) => <Icon {...p}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></Icon>;
+const IconActivity = (p) => <Icon {...p}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></Icon>;
+const IconCpu = (p) => <Icon {...p}><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="15" x2="23" y2="15"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="15" x2="4" y2="15"/></Icon>;
+const IconTrendingUp = (p) => <Icon {...p}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></Icon>;
+const IconLayers = (p) => <Icon {...p}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></Icon>;
+const IconFlag = (p) => <Icon {...p}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></Icon>;
+const IconZap = (p) => <Icon {...p}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></Icon>;
+const IconFlask = (p) => <Icon {...p}><path d="M9 2v6L3.5 19a2 2 0 0 0 1.8 3h13.4a2 2 0 0 0 1.8-3L15 8V2"/><line x1="9" y1="2" x2="15" y2="2"/><line x1="6" y1="15" x2="18" y2="15"/></Icon>;
+const IconZapLab = IconFlask;
+const IconHome = (p) => <Icon {...p}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></Icon>;
+const IconUsers = (p) => <Icon {...p}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></Icon>;
+
+/* ============ 雙語內容 dict ============ */
+const dict = {
+zh: {
+brand: "ASW",
+title: "AI-native 產品開發工作坊教材",
+subtitle: "教師如何自兼 PM/PjM，用 Claude Code 打造課程數位產品",
+nav_modules: "單元目錄", nav_prev: "上一單元", nav_next: "下一單元", nav_home: "首頁",
+key_terms: "關鍵專有名詞", flip_prompt: "點擊翻轉",
+flip_status: "已讀 {read} / 已顯示 {shown} / 總計 {total}",
+flip_next: "下一組", flip_retry: "重新開始",
+audio_read: "語音導覽",
+quiz_title: "模組知識檢定",
+quiz_status: "答對 {correct} / 已答 {answered} / 總計 {total}",
+quiz_next: "下一組", quiz_retry: "重新測驗",
+submit: "提交答案",
+score: "得分", correct: "正確", incorrect: "錯誤", explanation: "解析",
+overview_label: "Overview 概述",
+highlights_label: "Highlights 重點",
+deep_dive_label: "Deep Dive 深入解析",
+wrapup_label: "Wrap-up 總結",
+copyright_toast: "教材版權所有・僅供教育用途",
+
+analytics_title: "學習歷程分析", analytics_desc: "以下記錄你在本教材中的學習歷程與測驗表現，資料只儲存在你自己的瀏覽器裡。",
+analytics_form_title: "基本資料",
+analytics_group: "組別", analytics_group_select: "請選擇", analytics_dept: "系級",
+analytics_dept_ph: "例：IBS3",
+analytics_id: "學號", analytics_id_ph: "例：113212599",
+analytics_name_en: "英文姓名", analytics_name_en_ph: "例：Shihmin Lo",
+analytics_name_zh: "中文姓名", analytics_name_zh_ph: "例：王阿吉",
+analytics_export_csv: "匯出 CSV 歷程記錄",
+analytics_fill_required: "請填寫完整資訊以解鎖匯出",
+analytics_refresh_prompt: "是否刷新紀錄儲存？",
+group_options: ["G1","G2","G3","G4","G5","G6","G7","G8","G9","G10","G11","G12","Others"],
+analytics_total_time: "總學習時間", analytics_total_clicks: "總互動點擊",
+analytics_overall_acc: "總體測驗答對率",
+analytics_card_usage: "學習卡使用率",
+analytics_module: "模組", analytics_time: "停留時間",
+analytics_clicks: "點擊次數", analytics_acc: "答對率",
+analytics_correct_ans_total: "答對 / 已填答 / 總題數",
+analytics_cards_read_total: "已讀 / 總卡數",
+analytics_no_data: "尚未測驗", analytics_sec: "秒", analytics_times: "次",
+analytics_progress_title: "整體學習進度",
+analytics_progress_visited: "已瀏覽", analytics_progress_not_visited: "未瀏覽",
+analytics_progress_quiz_done: "已測驗",
+analytics_wp_title: "弱點分析與複習建議",
+analytics_wp_incorrect: "答錯題目：",
+analytics_wp_goto: "→ 前往複習此模組",
+analytics_wp_allpass: "所有已測驗模組答對率均達 75% 以上，表現優異！",
+analytics_wp_saved: "學習歷程已自動儲存於本機瀏覽器",
+analytics_wp_clear: "🗑 清除歷程",
+analytics_wp_clear_confirm: "確定要清除所有學習歷程資料嗎？此操作無法復原。",
+analytics_wp_tts_intro: "以下是您的弱點分析。",
+analytics_wp_tts_module: "模組：{name}，答對率 {acc}%，建議複習。",
+analytics_wp_tts_allpass: "恭喜！所有已測驗模組答對率均達 75% 以上。",
+
+m0_nav: "0. 執行概要",
+m0_title: "AI-native 產品開發工作坊教材包",
+m0_intro: "這是一套完整的 AI-native 產品開發工作坊教材，設計給沒有程式背景的大學教師使用。核心主張是：AI 時代真正改變的不是要不要用 AI，而是開發一個數位產品的整個流程。教材把這個流程拆成六層架構——Customer Needs、Product Goals、Open Spec、Architecture／Graphiti、Schema、AI Coding——並轉譯成一套基礎模組六小時、實施模組六小時的工作坊，讓老師學會自兼產品經理與專案經理，用 Claude Code 把教學想法變成真正能運作的數位工具，同時搭配 Agile 專案管理的必要概念，讓整個過程能持續被一個小型團隊執行下去。全程以駱世民教授（Prof. Shihmin Lo, NCNU）的 EMI 課程「國際策略管理（SMMC）」作為貫穿案例，示範從規格撰寫、多重代理人協作、交接文件，到成效評量的完整流程。",
+m0_why: "為什麼老師需要這套方法？",
+m0_why_desc: "過去，教師想做一個課程數位產品，只能仰賴工程師或外部廠商，溝通成本高、等待時間長。這套工作坊讓老師直接掌握「定義問題」的能力，把動手實作的部分交給 AI，大幅縮短從想法到可用產品的距離。",
+m0_modules: [
+  { num: "01", title: "六層架構知識庫", desc: "AI-native 開發的核心概念：Needs、Goals、Spec、Graphiti、Schema、AI Coding" },
+  { num: "02", title: "工作坊架構設計", desc: "基礎模組 6 小時 + 實施模組 6 小時，角色轉換與課程總覽" },
+  { num: "03", title: "Agile / PjM 必要概念", desc: "Backlog、看板、衝刺、完成的定義、同步會、回顧會、MVP" },
+  { num: "04", title: "EMI 案例：Vibe Coding 實作", desc: "用 Claude Code 把規格變成可運作原型，清楚 vs 模糊規格對照" },
+  { num: "05", title: "多重代理人協作", desc: "判斷任務平行或相依，一句話請 Claude Code 分工處理" },
+  { num: "06", title: "交接文件與評量機制", desc: "可複製使用的交接範本、學習目標評量表與課後回饋問卷" }
+],
+m0_stats: [ { val:"6+6", label:"總時數（小時）" }, { val:"6", label:"核心架構層" }, { val:"7", label:"Agile 必要概念" }, { val:"13", label:"行銷簡報投影片" } ],
+m0_start: "開始學習 →",
+
+m1_nav: "1. 六層架構知識庫", m1_title: "六層架構知識庫",
+m1_overview: "AI-native 開發的核心，是把一個模糊的需求，逐層轉譯成 AI 能理解、能執行的規格。這一層一層的順序，決定了後面的實作品質。",
+m1_highlights: ["六層架構","Graphiti雙重意涵","三種記憶能力對照","疊代關係"],
+m1_p1: "六層架構分別回答六個問題：Customer Needs 回答「為什麼要做」；Product Goals 回答「要達成什麼結果」；Open Spec 回答「系統必須做什麼」；Architecture／Graphiti 回答「彼此如何連結」；Schema 回答「資料長什麼樣」；最後 AI Coding 才是動手實作，回答「誰把它寫出來」。濃縮成一句話：Spec 決定做什麼，Graphiti 決定怎麼組裝，Schema 決定資料長怎樣，AI Agent 負責把它寫出來。",
+m1_p2: "Graphiti 這個詞同時指兩件事：通用概念——描述系統裡各物件如何連結的關聯圖；以及特定工具——getzep/graphiti 這類具時間感知的知識圖譜開發套件。在 AI-native 系統裡，這兩者常常疊合在一起。",
+m1_p3: "更重要的是，Graphiti 與 Schema 不是單純的上下層關係，而是互相疊代、來回修正：畫架構時可能發現某個關聯需要特定欄位才能成立，設計 Schema 時也可能暗示了一條原本沒畫出來的關聯。對非技術背景的學員，也可以用更友善的說法理解：Graphiti 像是畫一張家族族譜，Schema 像是設計一張成績單的欄位。",
+m1_p4: "如果想更深入理解 Graphiti 這個工具，可以對照三種不同的記憶能力：向量資料庫知道哪些東西「像」；圖資料庫知道哪些東西「有關」；Graphiti 兩者都知道，還多記住「什麼時候變的」。它的核心元素包括節點（Nodes）、連結線（Edges）、相似性（Similarity）、以及脈絡與時間（Context & Temporal Evolution）。",
+m1_wrapup: "六層架構不是新的技術規範，而是一套讓老師在完全不寫程式的情況下，也能清楚定義一個數位產品的思考順序。掌握這六層，才能在後面的工作坊裡，真正跟 AI 溝通清楚。",
+m1_terms: [
+  { front:"Open Spec", back:"用使用者故事句型寫出的系統行為清單，回答「系統必須做什麼」" },
+  { front:"Graphiti（概念）", back:"描述系統中各物件彼此如何連結的關聯圖，通用概念，任何開發流程都需要" },
+  { front:"Graphiti（工具）", back:"getzep/graphiti，一個具時間感知的知識圖譜開發套件，能記住關係如何隨時間演變" },
+  { front:"Schema", back:"資料規格表，定義每個物件有哪些欄位、資料長什麼樣" },
+  { front:"疊代（Graphiti↔Schema）", back:"關聯圖與資料規格表互相來回修正，不是一次到位的線性關係" },
+  { front:"向量資料庫", back:"知道哪些東西「像」，擅長回答概念相似度的問題" }
+],
+m1_q: [
+  { q:"Open Spec 主要回答哪一個問題？", opts:["為什麼要做","要達成什麼結果","系統必須做什麼","資料長什麼樣"], ans:_A2, exp:"Open Spec 回答『系統必須做什麼』，用使用者故事句型描述。" },
+  { q:"Graphiti 在這個架構裡，同時具有哪兩種意涵？", opts:["只是通用概念","只是特定工具","通用概念＋特定工具","跟 Schema 完全相同"], ans:_A2, exp:"Graphiti 同時指通用的關聯圖概念，以及 getzep/graphiti 這個特定開發套件。" },
+  { q:"Graphiti 與 Schema 的關係最準確的描述是？", opts:["Schema 永遠要先畫好才能畫 Graphiti","兩者互相疊代、來回修正","兩者互不相關","Graphiti 只在正式上線後才需要"], ans:_A1, exp:"兩者是疊代關係，會互相來回修正，不是單向的上下層關係。" },
+  { q:"向量資料庫最擅長回答哪種問題？", opts:["誰跟誰有關係","哪些概念很相似","資料什麼時候變的","系統要怎麼實作"], ans:_A1, exp:"向量資料庫知道哪些東西「像」，擅長相似度查詢。" },
+  { q:"把「資料規格表」類比成設計一張成績單的欄位，說的是哪個概念？", opts:["Graphiti","Schema","Open Spec","Product Goals"], ans:_A1, exp:"這是 Schema 的友善類比說法。" },
+  { q:"六層架構中，哪一層負責「動手把程式碼寫出來」？", opts:["Open Spec","Schema","AI Coding","Product Goals"], ans:_A2, exp:"AI Coding → Production 才是實作層，回答「誰把它寫出來」。" }
+],
+
+m2_nav: "2. 工作坊架構設計", m2_title: "工作坊架構設計",
+m2_overview: "把六層架構轉譯成一場真正可以開課的工作坊：基礎模組六小時，實施模組六小時，教會沒有程式背景的老師自兼 PM/PjM。",
+m2_highlights: ["基礎模組6HR","實施模組6HR","角色轉換","3HR快速精華版"],
+m2_p1: "工作坊分成兩個各六小時的模組。基礎模組完全不需要碰任何 AI 工具，專注在把教學想法一層一層轉譯成清楚的規格，同時導入 Agile 專案管理的必要概念。實施模組才正式開始動手，用 Claude Code 把規格變成真正能運作的原型，並學會多重代理人協作與交接文件撰寫。兩模組可以連續開課，也可以各自獨立排課。",
+m2_p2: "角色會整個轉換：老師兼任 Product Manager（定義要做什麼）與 Project Manager（安排誰、何時做）；TA 或協作教師扮演 Vibe Coder，實際跟 Claude Code 對話產出程式碼；Claude Code 則是 Implementer，依照交接文件把規格變成可運作的產品，必要時分派多個子代理人並行處理。",
+m2_p3: "基礎模組六個 Session：開場與六層架構總覽、Needs→Goals、Open Spec、Graphiti+Schema、Agile 必要概念、收尾整理成基礎規格包。實施模組六個 Session：Claude Code 入門、Vibe Coding 實作、多重代理人協作、交接文件撰寫、角色互換交接演練、成果展示與回顧會。",
+m2_p4: "如果時間有限，也設計了快速精華版：基礎模組三小時＋實施模組三小時，一樣可以完整走過六層架構，適合時間有限的場次。",
+m2_wrapup: "這套工作坊的設計邏輯，是讓整套課程結構本身，就是六層架構的一次完整示範——先定義、再組裝、最後才動手，教材本身就是教學內容的證明。",
+m2_terms: [
+  { front:"Vibe Coding", back:"實際與 AI（Claude Code）對話、產出程式碼的過程，由 TA 或協作教師負責執行" },
+  { front:"PM / PjM", back:"老師在這套工作坊中兼任的雙重角色：Product Manager 定義做什麼，Project Manager 安排何時由誰做" },
+  { front:"基礎模組", back:"六小時，完全不需要 AI 工具，涵蓋 Needs/Goals/Spec/Graphiti/Schema/Agile 概念" },
+  { front:"實施模組", back:"六小時，正式使用 Claude Code 動手做，涵蓋 Vibe Coding/多重代理人/交接/回顧會" },
+  { front:"快速精華版", back:"基礎 3 小時＋實施 3 小時的濃縮版本，適合時間有限的場次" }
+],
+m2_q: [
+  { q:"基礎模組總共多少小時，主要教什麼能力？", opts:["6小時，PM/PjM定義能力","6小時，工程師寫程式能力","3小時，行銷能力","12小時，只教Claude Code操作"], ans:_A0, exp:"基礎模組六小時，完全不碰AI工具，專注在定義能力。" },
+  { q:"實施模組的角色對照中，Claude Code 對應到哪個角色？", opts:["Product Manager","Vibe Coder","Implementer","Project Manager"], ans:_A2, exp:"Claude Code 是 Implementer，依交接文件把規格變成產品。" },
+  { q:"為什麼要設計快速精華版？", opts:["取代標準版，不再開標準版","給時間有限的場次一樣走完六層架構","只給進階學員使用","只包含Vibe Coding部分"], ans:_A1, exp:"快速精華版是給時間有限場次的另一種選項，並非取代標準版。" },
+  { q:"兩個模組的關係，下列何者正確？", opts:["一定要連續開課才有效","可以連續開，也可以各自獨立排課","實施模組要先上","兩者內容完全重複"], ans:_A1, exp:"兩模組設計上可以彈性排課，不強制連續。" }
+],
+
+m3_nav: "3. Agile / PjM 必要概念", m3_title: "Agile / PjM 必要概念",
+m3_overview: "規格寫完，不代表專案會自己跑下去。這一節把 Backlog、看板、衝刺、完成的定義、同步會、回顧會、MVP 這些概念，對應到六層架構上。",
+m3_highlights: ["Backlog","看板Kanban","衝刺Sprint","完成的定義","同步會","回顧會","MVP"],
+m3_p1: "Backlog 是所有還沒做、但已經想到的事的清單，不分先後，先收集再排序。看板則是把 Backlog 裡的項目，依「待做／進行中／已完成」三欄追蹤進度——如果「進行中」欄位一次塞了太多張卡，代表同時做太多事，反而每件事都做不完。",
+m3_p2: "衝刺是固定一段時間只專注做完一批工作，時間到就檢視、調整，再開始下一輪。切割衝刺時要注意任務的相依關係——例如報表功能一定要等問答資料格式確定後才能開始，不能只照便利貼順序硬做。",
+m3_p3: "「完成的定義」是最容易被忽略的地雷：同一句「做完了」，老師跟 TA 可能認定完全不同的標準。每一條使用者故事都應該先講清楚「怎樣才算做完」，而不是等做完才發現不符預期。",
+m3_p4: "同步會不是開會報告，是花 3-5 分鐘快速同步「上次做了什麼、接下來要做什麼、卡在哪裡」。回顧會則是一輪工作結束後，用 Keep／Problem／Try 三欄檢討流程，重點是檢討流程而不是檢討人。最小可行產品（MVP）則提醒團隊：先求有能動的版本，再求好，不要一次追求完美。",
+m3_wrapup: "這些概念不是額外的知識，而是讓六層架構能被一個團隊持續執行下去的操作介面——沒有看板、沒有衝刺，規格寫得再清楚，團隊還是會亂。",
+m3_terms: [
+  { front:"Backlog", back:"所有還沒做、但已經想到的功能清單，先收集不分先後" },
+  { front:"看板 Kanban", back:"待做／進行中／已完成三欄，用來追蹤工作進度的視覺化工具" },
+  { front:"衝刺 Sprint", back:"固定一段時間只專注做完一批工作，時間到就檢視調整" },
+  { front:"完成的定義 DoD", back:"一項工作要滿足什麼條件才算做完，避免各自認定標準不一" },
+  { front:"同步會 Standup", back:"3-5分鐘快速同步進度與卡點，不是逐項報告" },
+  { front:"回顧會 Retrospective", back:"用 Keep/Problem/Try 三欄檢討流程，而非檢討人" },
+  { front:"MVP", back:"最小可行產品，先求有能運作的版本，再求好" }
+],
+m3_q: [
+  { q:"Backlog的核心精神是？", opts:["只收集重要的項目","收集所有想到的事，不分先後","必須馬上排出優先順序","只能由老師新增"], ans:_A1, exp:"Backlog先全部收集，排優先順序是下一步的事。" },
+  { q:"看板「進行中」欄位塞太多卡片，代表什麼？", opts:["進度很快","同時做太多事，反而做不完","需要增加更多欄位","應該取消看板"], ans:_A1, exp:"同時進行太多工作，反而每件事都做不完。" },
+  { q:"切割衝刺時最容易被忽略的是？", opts:["任務的相依關係","便利貼的顏色","開會的時間","團隊人數"], ans:_A0, exp:"忽略相依關係，容易導致排序錯誤、需要重工。" },
+  { q:"完成的定義主要用來解決什麼問題？", opts:["工具選擇問題","不同人對「做完」認定不一致","誰負責寫程式","要不要用AI"], ans:_A1, exp:"完成的定義統一「做完」的判斷標準。" },
+  { q:"回顧會的重點原則是？", opts:["檢討做得不好的人","檢討流程而非檢討人","只在專案失敗時才辦","由AI自動產生報告"], ans:_A1, exp:"回顧會的核心精神是檢討流程，不是檢討人。" },
+  { q:"MVP的精神最接近下列哪一句話？", opts:["一次做到完美再上線","先求有能動的版本，再求好","先做行銷，再做產品","先招募團隊，再定義規格"], ans:_A1, exp:"MVP講求先求有、再求好，不追求一次到位。" }
+],
+
+m4_nav: "4. EMI案例：Vibe Coding實作", m4_title: "EMI 案例：Vibe Coding 實作",
+m4_overview: "用駱世民教授的 EMI 課程「國際策略管理（SMMC）」作為真實案例，示範怎麼把完整規格包交給 Claude Code，並刻意對照「規格清楚」與「規格模糊」兩種結果的差異。",
+m4_highlights: ["EMI真實案例","雙語AI助教","規格清楚vs模糊對照","Definition of Done檢查"],
+m4_p1: "案例背景是駱教授的 EMI 課程，學生因為全英語授課常常跟不上，老師沒有時間逐一解惑，系所也想追蹤學生在哪些單元卡關。團隊把需求一層一層寫成規格：3條Needs、3個Goals、5條使用者故事（含完成的定義）、Graphiti關聯樹、Schema資料表，整理成一份完整的基礎規格包。",
+m4_p2: "示範時會先把完整規格包貼給 Claude Code，並請它「先用三到五句話確認理解，再開始實作」——這個習慣等同於團隊裡的需求覆核，能提早抓到誤解，而不是做完才發現方向錯了。",
+m4_p3: "最關鍵的教學設計，是刻意用第二次「故意模糊」的指令重跑一次，只給一句「幫我做一個課程網站，有AI可以回答學生問題」。兩次結果一比對，學生會親眼看到：雙語支援、對話紀錄、信心不足時明確告知，這些原本規格裡清楚寫出來的功能，在模糊指令下全部消失。",
+m4_p4: "這個對照，直接回答了整套工作坊最核心的問題：規格的清晰度，直接決定了 AI 產出的品質。原型做完後，還要逐條核對 Definition of Done，而不是看起來「差不多」就算過關。",
+m4_wrapup: "Vibe Coding 不是把工作丟給 AI 就結束，而是用清楚的規格引導 AI 做出對的東西——這正是老師身為 PM/PjM 最核心的工作。",
+m4_terms: [
+  { front:"雙語AI助教", back:"能用中文或英文提問，並以提問語言回覆的AI問答功能，是EMI案例的核心規格" },
+  { front:"需求覆核", back:"請Claude Code先複述理解再動手實作的習慣，能提早抓到誤解" },
+  { front:"規格清楚vs模糊對照", back:"用同一個專案分別跑清楚規格與模糊指令，直接比較AI產出的落差" },
+  { front:"信心不足告知", back:"AI助教在超出教材範圍時，必須明確告知而非自行編造答案的規格要求" },
+  { front:"Vibe Coding Log", back:"記錄實際跟Claude Code對話的過程，包含用了什麼prompt、AI誤解了什麼" }
+],
+m4_q: [
+  { q:"EMI案例中，老師沒時間解決的核心痛點是？", opts:["學生不想上課","逐一回覆重複性問題","教室設備不足","課程太簡單"], ans:_A1, exp:"老師沒有足夠時間逐一回覆學生課後的重複性問題。" },
+  { q:"請Claude Code「先複述理解再動手」的目的是？", opts:["浪費時間","提早抓到誤解，避免做完才發現方向錯了","讓Claude Code顯得更聰明","跟六層架構無關"], ans:_A1, exp:"等同於需求覆核，提早抓誤解比做完才修正更省時。" },
+  { q:"模糊指令重跑一次後，通常會缺少哪些原本規格裡的功能？", opts:["顏色與字體","雙語支援、對話紀錄、信心不足告知","伺服器速度","網域名稱"], ans:_A1, exp:"這些都是原本規格裡明確寫出來、但模糊指令沒提到的功能。" },
+  { q:"整套案例演示最核心想證明的一句話是？", opts:["AI永遠比人聰明","規格的清晰度直接決定AI產出的品質","模糊指令比較快","Vibe Coding不需要檢查"], ans:_A1, exp:"這正是整套工作坊最核心的教學重點。" },
+  { q:"AI助教遇到超出教材範圍的問題時，規格要求它應該？", opts:["自行編造合理答案","明確告知教材沒有涵蓋，建議詢問老師","直接不回應","轉問其他學生"], ans:_A1, exp:"不確定時必須明確告知，不能自行編造答案。" }
+],
+
+m5_nav: "5. 多重代理人協作", m5_title: "多重代理人協作",
+m5_overview: "當專案有好幾件事要同時做，可以用一句話請 Claude Code 派出多個子代理人平行處理——但關鍵是要先判斷哪些工作可以平行、哪些要排隊。",
+m5_highlights: ["探索型/實作型/審查型","任務相依判斷","Graphiti關聯圖回頭用","審查後再修正"],
+m5_p1: "案例延續EMI課程，把工作拆成三個任務：課程頁面（任務A）、雙語AI助教問答（任務B）、對話紀錄與每週報表（任務C）。任務A與B彼此獨立，可以平行處理；但任務C依賴任務B產生的對話資料格式，必須排在B之後才能開始。",
+m5_p2: "判斷平行或相依的依據，其實就是先前已經畫好的 Graphiti 關聯圖——WeeklyReport 這條線本來就標明它是「依Conversation統計而成」，這條線直接告訴你任務C要排在任務B之後，不是憑空猜測。",
+m5_p3: "Claude Code 支援三種分工角色：探索型代理人先讀懂專案現況；實作型代理人負責把功能做出來；審查型代理人專門檢查別人做的東西有沒有問題。把「寫」與「審查」分開，能避免同一個代理人自己寫、自己審查看不出問題。",
+m5_p4: "審查完後建議先列出問題清單，不要讓AI直接全部改掉，保留老師（PjM）最後的決定權。如果不管相依關係就把三個任務一起發派，常見的後果是任務C假設了一種資料格式，結果跟任務B實際產出的格式對不起來，還要重工。",
+m5_wrapup: "多重代理人不是拆得越多越快，而是要先判斷「真的獨立」且「量體夠大」才值得拆——這個判斷力，比操作方法本身更重要。",
+m5_terms: [
+  { front:"探索型代理人", back:"先去讀懂整個專案現況、找資料在哪裡的子代理人角色" },
+  { front:"實作型代理人", back:"專門負責把某個功能實際做出來的子代理人角色" },
+  { front:"審查型代理人", back:"專門檢查另一個代理人寫出來的東西有沒有問題，避免自己寫自己審查" },
+  { front:"任務相依關係", back:"某個任務的產出是另一個任務的輸入，必須排序執行，不能盲目平行" },
+  { front:"Graphiti關聯圖的延伸用途", back:"不只是設計資料的工具，也能拿來判斷哪些工作可以平行、哪些要排隊" }
+],
+m5_q: [
+  { q:"案例中，任務C（報表）為什麼不能跟任務A、B同時平行處理？", opts:["因為報表比較簡單","因為它依賴任務B產生的對話資料格式","因為老師比較忙","因為Claude Code一次只能做一件事"], ans:_A1, exp:"任務C依賴任務B的資料格式，必須排在其後。" },
+  { q:"判斷哪些任務要排隊、哪些可以平行，最直接的依據是？", opts:["便利貼的顏色","已經畫好的Graphiti關聯圖","團隊人數多寡","專案預算"], ans:_A1, exp:"Graphiti關聯圖裡的依賴線，直接指出排序依據。" },
+  { q:"把「寫」與「審查」分開交給不同代理人，主要是為了避免什麼？", opts:["浪費運算資源","自己寫自己審查看不出問題","增加等待時間","降低程式碼品質"], ans:_A1, exp:"分開角色能避免自己寫、自己審查的盲點。" },
+  { q:"審查型代理人檢查出問題後，建議的做法是？", opts:["直接讓它全部自動修改","先列出問題清單，由老師決定要不要改","忽略問題繼續下一步","重新發派任務給不同代理人"], ans:_A1, exp:"保留老師最後決定權，而非全部交給AI自行決定。" },
+  { q:"不管相依關係、把三個任務一起發派，常見的後果是？", opts:["速度會變得更快","不同任務的資料格式對不起來，需要重工","不會有任何影響","AI會自動處理好所有相依關係"], ans:_A1, exp:"忽略相依關係常導致格式對不起來，需要重工。" }
+],
+
+m6_nav: "6. 交接文件與評量機制", m6_title: "交接文件與評量機制",
+m6_overview: "一份好的交接文件，要讓TA或協作教師完全不能問你，也能獨立接手。這一節整合交接文件範本的十個章節，以及整套工作坊的學習成效評量與回饋機制設計。",
+m6_highlights: ["交接文件十節","同儕實測","結業標準","課後回饋問卷"],
+m6_p1: "交接文件範本包含十個章節：專案基本資訊、Customer Needs、Product Goals、Open Spec、Graphiti、Schema、Vibe Coding Log、目前完成度、給接手者的下一步建議、聯絡窗口與同步節奏。填寫原則是假設接手的人完全沒有機會問你，文件必須自己說清楚一切。",
+m6_p2: "整套工作坊最關鍵的檢核點，是交接文件的「同儕實測」——讓另一組完全沒參與過程的人，只憑這份文件，實際延伸出至少一個新功能。如果對方看不懂，代表這位學員還沒有真正掌握「寫出可獨立使用的交接文件」這個學習目標。",
+m6_p3: "結業標準要求三項產出物：一份完整的基礎規格包、一個可運作的原型加上Vibe Coding Log、以及一份通過同儕實測的交接文件。課後回饋問卷則包含學習成效自評（前測/後測對照）、內容與節奏評分、講師與教材評價、以及後續應用意願四大部分。",
+m6_p4: "建議額外搭配30天後的簡短追蹤：學員是否已經開始把這套流程套用在自己的專案上、走到六層架構的哪一層、卡在哪裡。這比課堂當下的滿意度分數，更能驗證教材是否真的教會人。",
+m6_wrapup: "交接文件與評量機制，回過頭來呼應了整套架構最核心的精神：規格與文件必須自足，好不好用，由「不知情的第三者」說了算，而不是自己說了算。",
+m6_terms: [
+  { front:"同儕實測", back:"讓另一組完全沒參與過程的人只憑交接文件接手，驗證文件是否真的自足" },
+  { front:"結業標準", back:"完成基礎規格包、可運作原型+Log、通過同儕實測的交接文件，三項缺一不可" },
+  { front:"前測/後測自評", back:"課後問卷請學員針對五項學習目標，回想工作坊前後的信心值變化" },
+  { front:"30天追蹤", back:"結業後30天的簡短追蹤，確認學員是否真的把流程套用到實際專案" },
+  { front:"Vibe Coding Log", back:"交接文件第七節，記錄與Claude Code協作的過程與分工代理人" }
+],
+m6_q: [
+  { q:"交接文件的填寫原則，假設接手的人是什麼狀態？", opts:["可以隨時問原作者","完全沒有機會問原作者","已經參與過整個過程","是專業工程師"], ans:_A1, exp:"必須假設接手者無法詢問原作者，文件要能自足。" },
+  { q:"驗證交接文件是否真的「自足」，最有效的方式是？", opts:["請老師自己重讀一遍","同儕實測——讓沒參與過的人只憑文件接手","統計文件的字數","請AI摘要文件內容"], ans:_A1, exp:"同儕實測是最直接、最有說服力的驗證方式。" },
+  { q:"結業標準要求的三項產出物，不包含下列哪一項？", opts:["基礎規格包","可運作原型+Vibe Coding Log","通過同儕實測的交接文件","一份正式的期末書面測驗"], ans:_A3, exp:"結業標準採產出物驗收，不是書面測驗。" },
+  { q:"課後回饋問卷的Part A，主要在評量什麼？", opts:["講師的外表","學員對五項學習目標的前測/後測信心值","教室的座位安排","餐飲滿意度"], ans:_A1, exp:"Part A是學習成效自評，前測/後測信心值對照。" },
+  { q:"為什麼建議做30天後的追蹤，而不是只看課堂當下的問卷？", opts:["因為30天後比較好聯絡","更能驗證教材是否真的教會人、學員是否實際應用","因為法規要求","純粹增加工作量"], ans:_A1, exp:"長期追蹤比課堂滿意度分數更能驗證實際成效。" }
+],
+
+mlab_nav: "7. 互動實驗室", mlab_title: "互動實驗室", mlab_desc: "透過四個小活動，實際體驗看板管理、規格清晰度、任務相依判斷與自我評量。",
+mlab_labs: [
+  { title:"看板互動練習", desc:"點擊卡片，模擬在待做／進行中／已完成之間移動工作項目" },
+  { title:"規格清晰度對照", desc:"切換清楚規格與模糊指令，直接看到功能有無的差異" },
+  { title:"任務相依判斷", desc:"判斷三個任務裡，哪一個必須排在最後才能開始" },
+  { title:"學習信心自評", desc:"針對五項學習目標，為自己打分數，即時看到雷達分佈" }
+],
+
+mres_nav: "8. 外部學習資源", mres_title: "外部學習資源", mres_desc: "以下資源可以搭配本教材延伸閱讀，包含原始文件與外部參考連結。",
+
+date: "Version 2026.07.10",
+copyright: "For Educational Use Only",
+architect_label: "Architect:",
+architect_name: "Prof. Shihmin Lo",
+architect_url: "https://www.ibs.ncnu.edu.tw/index.php/faculty/tenured-professor/299-smlo"
+},
+en: {
+brand: "ASW",
+title: "AI-native Product Development Workshop",
+subtitle: "How Faculty Become PM/PjM and Build Course Products with Claude Code",
+nav_modules: "Modules", nav_prev: "Previous", nav_next: "Next", nav_home: "Home",
+key_terms: "Key Terms", flip_prompt: "Click to flip",
+flip_status: "Read {read} / Shown {shown} / Total {total}",
+flip_next: "Next Set", flip_retry: "Restart",
+audio_read: "Audio Guide",
+quiz_title: "Module Knowledge Check",
+quiz_status: "Correct {correct} / Answered {answered} / Total {total}",
+quiz_next: "Next Set", quiz_retry: "Retry Quiz",
+submit: "Submit Answers",
+score: "Score", correct: "Correct", incorrect: "Incorrect", explanation: "Explanation",
+overview_label: "Overview",
+highlights_label: "Highlights",
+deep_dive_label: "Deep Dive",
+wrapup_label: "Wrap-up",
+copyright_toast: "Copyrighted teaching material - for educational use only",
+
+analytics_title: "Learning Analytics", analytics_desc: "This tracks your learning progress and quiz performance in this material. Data is stored only in your own browser.",
+analytics_form_title: "Basic Information",
+analytics_group: "Group", analytics_group_select: "Please select", analytics_dept: "Dept/Year",
+analytics_dept_ph: "e.g. IBS3",
+analytics_id: "Student ID", analytics_id_ph: "e.g. 113212599",
+analytics_name_en: "English Name", analytics_name_en_ph: "e.g. Shihmin Lo",
+analytics_name_zh: "Chinese Name", analytics_name_zh_ph: "e.g. Wang A-Ji",
+analytics_export_csv: "Export CSV Record",
+analytics_fill_required: "Please fill in all fields to unlock export",
+analytics_refresh_prompt: "Refresh saved records?",
+group_options: ["G1","G2","G3","G4","G5","G6","G7","G8","G9","G10","G11","G12","Others"],
+analytics_total_time: "Total Study Time", analytics_total_clicks: "Total Interactions",
+analytics_overall_acc: "Overall Quiz Accuracy",
+analytics_card_usage: "Flashcard Usage",
+analytics_module: "Module", analytics_time: "Time Spent",
+analytics_clicks: "Clicks", analytics_acc: "Accuracy",
+analytics_correct_ans_total: "Correct / Answered / Total",
+analytics_cards_read_total: "Read / Total",
+analytics_no_data: "Not yet tested", analytics_sec: "sec", analytics_times: "times",
+analytics_progress_title: "Overall Progress",
+analytics_progress_visited: "Visited", analytics_progress_not_visited: "Not visited",
+analytics_progress_quiz_done: "Quiz done",
+analytics_wp_title: "Weak Points & Review Suggestions",
+analytics_wp_incorrect: "Missed questions:",
+analytics_wp_goto: "→ Go review this module",
+analytics_wp_allpass: "All tested modules scored 75% or above. Great work!",
+analytics_wp_saved: "Learning progress auto-saved in this browser",
+analytics_wp_clear: "🗑 Clear History",
+analytics_wp_clear_confirm: "Are you sure you want to clear all learning history? This cannot be undone.",
+analytics_wp_tts_intro: "Here is your weak-point analysis.",
+analytics_wp_tts_module: "Module: {name}, accuracy {acc}%, review recommended.",
+analytics_wp_tts_allpass: "Congratulations! All tested modules scored 75% or above.",
+
+m0_nav: "0. Executive Summary",
+m0_title: "AI-native Product Development Workshop Package",
+m0_intro: "This is a complete AI-native product development workshop package designed for university faculty with zero coding background. The core claim: what AI really transforms isn't whether to use it, but the entire process of building a digital product. The material breaks this process into six layers — Customer Needs, Product Goals, Open Spec, Architecture/Graphiti, Schema, AI Coding — and translates it into a workshop with a 6-hour Foundations module and a 6-hour Implementation module, teaching instructors to act as both product manager and project manager, using Claude Code to turn teaching ideas into working digital tools, alongside essential Agile concepts so a small team can keep the process running. Throughout, it uses Professor Shihmin Lo's (NCNU) EMI course, Strategic Management of Multinational Corporations (SMMC), as a running case, demonstrating the full flow from spec writing, multi-agent collaboration, and handoff documents, to outcome assessment.",
+m0_why: "Why do instructors need this approach?",
+m0_why_desc: "In the past, instructors wanting a digital course product could only rely on engineers or vendors — high communication cost, long waits. This workshop lets instructors directly own the skill of defining the problem, handing the hands-on building to AI, drastically shortening the distance from idea to usable product.",
+m0_modules: [
+  { num: "01", title: "Six-Layer Knowledge Base", desc: "Core AI-native concepts: Needs, Goals, Spec, Graphiti, Schema, AI Coding" },
+  { num: "02", title: "Workshop Structure Design", desc: "6-hour Foundations + 6-hour Implementation, role shift and course overview" },
+  { num: "03", title: "Essential Agile / PjM Concepts", desc: "Backlog, Kanban, Sprint, Definition of Done, Standup, Retrospective, MVP" },
+  { num: "04", title: "EMI Case: Vibe Coding in Action", desc: "Turning a spec into a working prototype with Claude Code, clear vs. vague comparison" },
+  { num: "05", title: "Multi-Agent Collaboration", desc: "Judging parallel vs. dependent tasks, delegating to Claude Code in one sentence" },
+  { num: "06", title: "Handoff Docs & Assessment", desc: "A reusable handoff template, learning-outcome rubric, and post-workshop survey" }
+],
+m0_stats: [ { val:"6+6", label:"Total Hours" }, { val:"6", label:"Core Layers" }, { val:"7", label:"Agile Concepts" }, { val:"13", label:"Marketing Deck Slides" } ],
+m0_start: "Start Learning →",
+
+m1_nav: "1. Six-Layer Knowledge Base", m1_title: "Six-Layer Knowledge Base",
+m1_overview: "The core of AI-native development is translating a vague requirement, layer by layer, into a specification AI can understand and execute. This layer order determines the quality of everything that follows.",
+m1_highlights: ["Six-Layer Framework","Graphiti's Dual Meaning","Three-Tier Memory Comparison","Iteration"],
+m1_p1: "The six layers each answer one question: Customer Needs answers 'why'; Product Goals answers 'what outcome'; Open Spec answers 'what the system must do'; Architecture/Graphiti answers 'how things connect'; Schema answers 'what the data looks like'; and only then does AI Coding begin, answering 'who writes it'. In one sentence: Spec decides what to build, Graphiti decides how it connects, Schema decides what the data looks like, and the AI agent writes it.",
+m1_p2: "Graphiti refers to two things at once: the generic concept — a relationship diagram describing how objects in a system connect; and the specific tool — getzep/graphiti, a temporally-aware knowledge-graph development kit. In AI-native systems, these two often overlap.",
+m1_p3: "More importantly, Graphiti and Schema are not a simple top-down relationship but iterate back and forth: drafting the architecture may reveal that a relationship needs a specific field to hold up, and designing the Schema may hint at a relationship that wasn't drawn yet. For non-technical learners, friendlier analogies work too: Graphiti is like drawing a family tree, Schema is like designing the columns of a grade sheet.",
+m1_p4: "To understand the Graphiti tool more deeply, compare three kinds of memory: vector databases know what's 'similar'; graph databases know what's 'related'; Graphiti knows both, plus 'when things changed'. Its core elements are Nodes, Edges, Similarity, and Context & Temporal Evolution.",
+m1_wrapup: "The six-layer framework isn't a new technical standard — it's a thinking order that lets an instructor clearly define a digital product without writing any code. Mastering these six layers is what makes real communication with AI possible in the rest of the workshop.",
+m1_terms: [
+  { front:"Open Spec", back:"A list of system behaviors written as user stories, answering 'what the system must do'" },
+  { front:"Graphiti (concept)", back:"A relationship diagram describing how objects connect — a generic concept any development process needs" },
+  { front:"Graphiti (tool)", back:"getzep/graphiti, a temporally-aware knowledge-graph dev kit that remembers how relationships evolve" },
+  { front:"Schema", back:"A data spec sheet defining what fields each object has and what the data looks like" },
+  { front:"Iteration (Graphiti↔Schema)", back:"The relationship diagram and data spec revise each other back and forth, not a one-shot linear step" },
+  { front:"Vector Database", back:"Knows what's 'similar', good at answering conceptual-similarity questions" }
+],
+m1_q: [
+  { q:"Which question does Open Spec primarily answer?", opts:["Why build it","What outcome to achieve","What the system must do","What the data looks like"], ans:_A2, exp:"Open Spec answers 'what the system must do', written as user stories." },
+  { q:"Which two meanings does Graphiti carry in this framework?", opts:["Only a generic concept","Only a specific tool","Both a generic concept and a specific tool","Exactly the same as Schema"], ans:_A2, exp:"Graphiti means both the generic relationship-diagram concept and the getzep/graphiti tool." },
+  { q:"What best describes the relationship between Graphiti and Schema?", opts:["Schema must always be drawn before Graphiti","They iterate and revise each other back and forth","They are unrelated","Graphiti is only needed after going live"], ans:_A1, exp:"They iterate, not a one-way top-down relationship." },
+  { q:"What is a vector database best at answering?", opts:["Who is related to whom","Which concepts are similar","When data changed","How to implement the system"], ans:_A1, exp:"Vector databases know what's 'similar', great for similarity queries." },
+  { q:"Comparing a 'data spec sheet' to designing grade-sheet columns is an analogy for which concept?", opts:["Graphiti","Schema","Open Spec","Product Goals"], ans:_A1, exp:"This is the friendly analogy for Schema." },
+  { q:"Which layer is responsible for actually 'writing the code'?", opts:["Open Spec","Schema","AI Coding","Product Goals"], ans:_A2, exp:"AI Coding → Production is the implementation layer, answering 'who writes it'." }
+],
+
+m2_nav: "2. Workshop Structure Design", m2_title: "Workshop Structure Design",
+m2_overview: "Translating the six-layer framework into an actually runnable workshop: 6 hours Foundations, 6 hours Implementation, teaching non-coding instructors to act as PM/PjM.",
+m2_highlights: ["Foundations 6HR","Implementation 6HR","Role Shift","3HR Condensed Track"],
+m2_p1: "The workshop splits into two six-hour modules. The Foundations module needs no AI tools at all, focusing on translating teaching ideas layer by layer into a clear spec while introducing essential Agile concepts. The Implementation module is where hands-on work begins, using Claude Code to turn the spec into a working prototype, and learning multi-agent collaboration and handoff-document writing. The two modules can run back to back or be scheduled independently.",
+m2_p2: "Roles shift entirely: the instructor becomes both Product Manager (defining what to build) and Project Manager (arranging who does what, and when); the TA or co-instructor plays Vibe Coder, actually talking to Claude Code to produce code; Claude Code is the Implementer, turning the spec into a working product per the handoff document, delegating to multiple sub-agents in parallel when needed.",
+m2_p3: "Six Foundations sessions: opening and six-layer overview, Needs→Goals, Open Spec, Graphiti+Schema, essential Agile concepts, and wrapping up into a foundation spec pack. Six Implementation sessions: Claude Code basics, Vibe Coding in action, multi-agent collaboration, handoff-document writing, a role-swap handoff exercise, and a showcase plus retrospective.",
+m2_p4: "For limited time, a condensed track is also designed: 3 hours Foundations + 3 hours Implementation, still covering the full six-layer framework — suited to shorter sessions.",
+m2_wrapup: "The workshop's design logic is that the course structure itself is a full demonstration of the six-layer framework — define first, then assemble, only then build — the material is proof of its own content.",
+m2_terms: [
+  { front:"Vibe Coding", back:"The process of actually talking to AI (Claude Code) to produce code, carried out by the TA or co-instructor" },
+  { front:"PM / PjM", back:"The instructor's dual role in this workshop: Product Manager defines what, Project Manager arranges who/when" },
+  { front:"Foundations Module", back:"6 hours, no AI tools needed, covers Needs/Goals/Spec/Graphiti/Schema/Agile concepts" },
+  { front:"Implementation Module", back:"6 hours, hands-on with Claude Code, covers Vibe Coding/multi-agent/handoff/retrospective" },
+  { front:"Condensed Track", back:"A 3+3 hour condensed version, suited to time-limited sessions" }
+],
+m2_q: [
+  { q:"How many hours is the Foundations module, and what does it mainly teach?", opts:["6 hours, PM/PjM definition skills","6 hours, engineering/coding skills","3 hours, marketing skills","12 hours, only Claude Code operation"], ans:_A0, exp:"Foundations is 6 hours, no AI tools, focused on definition skills." },
+  { q:"In the Implementation-module role mapping, what does Claude Code correspond to?", opts:["Product Manager","Vibe Coder","Implementer","Project Manager"], ans:_A2, exp:"Claude Code is the Implementer, turning specs into products per the handoff doc." },
+  { q:"Why design a condensed track?", opts:["To replace the standard track entirely","To let time-limited sessions still complete all six layers","Only for advanced learners","Only covers the Vibe Coding part"], ans:_A1, exp:"The condensed track is an alternative option for limited-time sessions, not a replacement." },
+  { q:"Which statement about the two modules is correct?", opts:["They must run back to back to be effective","They can run back to back or be scheduled independently","Implementation must come first","Their content is entirely duplicated"], ans:_A1, exp:"The two modules are designed to be scheduled flexibly." }
+],
+
+m3_nav: "3. Essential Agile / PjM Concepts", m3_title: "Essential Agile / PjM Concepts",
+m3_overview: "Finishing the spec doesn't mean the project runs itself. This section maps Backlog, Kanban, Sprint, Definition of Done, Standup, Retrospective, and MVP onto the six-layer framework.",
+m3_highlights: ["Backlog","Kanban","Sprint","Definition of Done","Standup","Retrospective","MVP"],
+m3_p1: "A Backlog is a list of everything not yet done but already thought of, unordered, collect first. A Kanban board tracks items from the Backlog across To Do / Doing / Done — if the Doing column gets overloaded with cards, it means too much is being worked on at once, and nothing actually finishes.",
+m3_p2: "A Sprint is a fixed period focused on finishing one batch of work, then reviewing and adjusting before the next round. When splitting sprints, watch task dependencies — e.g. the reporting feature must wait until the Q&A data format is fixed before it can start, not just follow sticky-note order blindly.",
+m3_p3: "Definition of Done is the most easily overlooked landmine: the same phrase 'it's done' can mean completely different standards to the instructor versus the TA. Every user story should state up front 'what counts as done', instead of discovering the mismatch only after the work is finished.",
+m3_p4: "A Standup isn't a status meeting — it's 3-5 minutes to quickly sync 'what I did, what's next, what's blocking me'. A Retrospective, after a round of work, uses Keep / Problem / Try to review the process, not the people. An MVP reminds the team: get something working first, then improve it, rather than chasing perfection on the first try.",
+m3_wrapup: "These aren't extra knowledge — they're the operating interface that keeps a team running the six-layer framework continuously. Without a Kanban board or sprints, even a perfectly clear spec still falls into chaos.",
+m3_terms: [
+  { front:"Backlog", back:"A list of everything not yet done but already thought of, unordered, collected first" },
+  { front:"Kanban", back:"A visual board across To Do / Doing / Done used to track work progress" },
+  { front:"Sprint", back:"A fixed period focused on finishing one batch of work, reviewed and adjusted afterward" },
+  { front:"Definition of Done", back:"The conditions a piece of work must meet to count as 'done', avoiding mismatched standards" },
+  { front:"Standup", back:"A 3-5 minute quick sync on progress and blockers, not a detailed report" },
+  { front:"Retrospective", back:"Reviewing process with Keep/Problem/Try, not reviewing people" },
+  { front:"MVP", back:"Minimum Viable Product — get something working first, then improve it" }
+],
+m3_q: [
+  { q:"What is the core spirit of a Backlog?", opts:["Only collect important items","Collect everything thought of, unordered","Must be prioritized immediately","Only the instructor can add to it"], ans:_A1, exp:"A Backlog collects everything first; prioritizing comes later." },
+  { q:"What does an overloaded 'Doing' column on a Kanban board indicate?", opts:["Progress is fast","Too much in progress at once, nothing finishes","More columns are needed","The Kanban board should be scrapped"], ans:_A1, exp:"Too much work in progress means nothing actually gets finished." },
+  { q:"What's most easily overlooked when splitting sprints?", opts:["Task dependencies","Sticky-note colors","Meeting times","Team size"], ans:_A0, exp:"Ignoring dependencies leads to wrong ordering and rework." },
+  { q:"What problem does Definition of Done mainly solve?", opts:["Tool selection","Mismatched standards for 'done' between people","Who codes what","Whether to use AI"], ans:_A1, exp:"It unifies the standard for what counts as 'done'." },
+  { q:"What is the core principle of a Retrospective?", opts:["Reviewing the person who did poorly","Reviewing the process, not the people","Only held when a project fails","Auto-generated report by AI"], ans:_A1, exp:"Retrospectives review process, not people." },
+  { q:"Which statement is closest to the spirit of MVP?", opts:["Get it perfect before launch","Get something working first, then improve it","Do marketing before the product","Recruit the team before defining the spec"], ans:_A1, exp:"MVP is about working-first, then-better, not one-shot perfection." }
+],
+
+m4_nav: "4. EMI Case: Vibe Coding in Action", m4_title: "EMI Case: Vibe Coding in Action",
+m4_overview: "Using Professor Shihmin Lo's EMI course, Strategic Management of Multinational Corporations (SMMC), as a real case to demonstrate handing a complete spec pack to Claude Code, deliberately contrasting a 'clear spec' against a 'vague spec'.",
+m4_highlights: ["Real EMI Case","Bilingual AI TA","Clear vs Vague Spec","Definition of Done Check"],
+m4_p1: "The case background: Prof. Lo's EMI students often fall behind due to full-English instruction, the instructor has no time to answer every question one by one, and the department wants to track where students get stuck. The team wrote the requirements layer by layer: 3 Needs, 3 Goals, 5 user stories (with Definition of Done), a Graphiti relationship tree, and a Schema table, forming a complete foundation spec pack.",
+m4_p2: "The demo hands the complete spec pack to Claude Code and asks it to 'confirm your understanding in three to five sentences before implementing' — equivalent to a requirements review within a team, catching misunderstandings early instead of discovering the wrong direction after the work is done.",
+m4_p3: "The most critical teaching device: deliberately re-running it with a 'vague' instruction — just one sentence, 'build me a course website with an AI that can answer student questions.' Comparing the two results, students see with their own eyes that bilingual support, conversation logging, and clear disclosure when unsure — all clearly specified features — completely disappear under the vague instruction.",
+m4_p4: "This comparison directly answers the workshop's central question: the clarity of the spec directly determines the quality of what AI produces. After the prototype is built, each item must be checked against its Definition of Done, not waved through because it 'looks about right'.",
+m4_wrapup: "Vibe Coding isn't done the moment you hand work to AI — it's using a clear spec to guide AI toward the right outcome. That is the core job of the instructor acting as PM/PjM.",
+m4_terms: [
+  { front:"Bilingual AI TA", back:"An AI Q&A feature that answers in Chinese or English matching the question's language — the core EMI spec" },
+  { front:"Requirements Review", back:"The habit of asking Claude Code to restate its understanding before building, catching misunderstandings early" },
+  { front:"Clear vs Vague Spec Comparison", back:"Running the same project with a clear spec and a vague instruction to directly compare the gap in AI output" },
+  { front:"Confidence Disclosure", back:"The spec requirement that the AI TA must clearly say so, not invent answers, when a question is out of scope" },
+  { front:"Vibe Coding Log", back:"A record of the actual conversation with Claude Code, including prompts used and what AI misunderstood" }
+],
+m4_q: [
+  { q:"What core pain point does the instructor lack time to address in the EMI case?", opts:["Students don't want to attend class","Answering repetitive questions one by one","Insufficient classroom equipment","The course is too simple"], ans:_A1, exp:"The instructor lacks time to answer repetitive student questions individually." },
+  { q:"What's the purpose of asking Claude Code to 'restate understanding before building'?", opts:["Wasting time","Catching misunderstandings early, before work is done in the wrong direction","Making Claude Code seem smarter","Unrelated to the six-layer framework"], ans:_A1, exp:"Equivalent to a requirements review, saving time versus fixing it after the fact." },
+  { q:"After re-running with a vague instruction, which originally-specified features tend to disappear?", opts:["Colors and fonts","Bilingual support, conversation logging, confidence disclosure","Server speed","Domain name"], ans:_A1, exp:"These are features explicitly specified originally but omitted by the vague instruction." },
+  { q:"What does the whole case demo most centrally prove?", opts:["AI is always smarter than humans","Spec clarity directly determines AI output quality","Vague instructions are faster","Vibe Coding needs no checking"], ans:_A1, exp:"This is the workshop's most central teaching point." },
+  { q:"What should the AI TA do when a question is out of the material's scope?", opts:["Make up a plausible answer","Clearly state the material doesn't cover it and suggest asking the instructor","Simply not respond","Redirect to other students"], ans:_A1, exp:"It must clearly disclose uncertainty rather than fabricate an answer." }
+],
+
+m5_nav: "5. Multi-Agent Collaboration", m5_title: "Multi-Agent Collaboration",
+m5_overview: "When a project has several things to build at once, one sentence can ask Claude Code to dispatch multiple sub-agents in parallel — but the key is first judging what can run in parallel versus what has to wait.",
+m5_highlights: ["Explorer/Builder/Reviewer","Task Dependency Judgment","Reusing the Graphiti Diagram","Review then Revise"],
+m5_p1: "Continuing the EMI case, the work splits into three tasks: the course page (Task A), the bilingual AI Q&A (Task B), and conversation logging plus weekly reports (Task C). Tasks A and B are independent and can run in parallel; but Task C depends on the conversation data format produced by Task B, so it must come after B.",
+m5_p2: "The basis for judging parallel versus dependent is exactly the Graphiti relationship diagram drawn earlier — the WeeklyReport line already states it is 'aggregated from Conversation', which directly tells you Task C must follow Task B, not a guess made up on the spot.",
+m5_p3: "Claude Code supports three delegation roles: an explorer agent first understands the project's current state; a builder agent implements a feature; a reviewer agent checks another agent's work for problems. Separating 'building' from 'reviewing' avoids the blind spot of an agent reviewing its own work.",
+m5_p4: "After review, list the issues first rather than letting AI fix everything automatically, keeping the final decision with the instructor (PjM). If dependencies are ignored and all three tasks are dispatched together, a common result is Task C assuming a data format that doesn't match what Task B actually produced, requiring rework.",
+m5_wrapup: "Multi-agent delegation isn't about splitting as much as possible — it's about judging what is 'truly independent' and 'big enough to be worth splitting'. That judgment matters more than the operating method itself.",
+m5_terms: [
+  { front:"Explorer Agent", back:"A sub-agent role that first understands the project's current state and locates information" },
+  { front:"Builder Agent", back:"A sub-agent role dedicated to actually implementing a feature" },
+  { front:"Reviewer Agent", back:"A sub-agent role dedicated to checking another agent's work, avoiding self-review blind spots" },
+  { front:"Task Dependency", back:"When one task's output is another task's input, they must be sequenced, not blindly parallelized" },
+  { front:"Extended Use of the Graphiti Diagram", back:"Not just a data-design tool — also useful for judging what can run in parallel versus what must wait" }
+],
+m5_q: [
+  { q:"Why can't Task C (reports) run in parallel with Tasks A and B in this case?", opts:["Because reports are simpler","Because it depends on the conversation data format produced by Task B","Because the instructor is busy","Because Claude Code can only do one thing at a time"], ans:_A1, exp:"Task C depends on Task B's data format, so it must follow it." },
+  { q:"What is the most direct basis for judging which tasks must wait versus run in parallel?", opts:["Sticky-note colors","The Graphiti relationship diagram already drawn","Team headcount","Project budget"], ans:_A1, exp:"The dependency line in the Graphiti diagram directly indicates the ordering basis." },
+  { q:"Why separate 'building' and 'reviewing' into different agents?", opts:["To save compute resources","To avoid the blind spot of self-review","To increase wait time","To lower code quality"], ans:_A1, exp:"Separating roles avoids the blind spot of building and reviewing by the same agent." },
+  { q:"After a reviewer agent finds issues, what's the recommended approach?", opts:["Let it auto-fix everything","List the issues first, let the instructor decide what to change","Ignore the issues and move on","Redispatch the task to a different agent"], ans:_A1, exp:"Keep final decision-making with the instructor rather than handing it entirely to AI." },
+  { q:"What commonly happens if dependencies are ignored and all three tasks are dispatched together?", opts:["Things get faster","Data formats between tasks won't match, requiring rework","No effect at all","AI automatically resolves all dependencies"], ans:_A1, exp:"Ignoring dependencies commonly causes format mismatches requiring rework." }
+],
+
+m6_nav: "6. Handoff Docs & Assessment", m6_title: "Handoff Documents & Assessment",
+m6_overview: "A good handoff document lets a TA or co-instructor take over without ever asking you a question. This section combines the ten sections of the handoff template with the workshop's learning-outcome assessment and feedback mechanism.",
+m6_highlights: ["10 Handoff Sections","Peer Handoff Test","Completion Criteria","Post-Workshop Survey"],
+m6_p1: "The handoff template has ten sections: project basics, Customer Needs, Product Goals, Open Spec, Graphiti, Schema, Vibe Coding Log, current status, next-step suggestions for whoever takes over, and contact/sync cadence. The guiding principle: assume whoever takes over can never ask you anything — the document must explain everything on its own.",
+m6_p2: "The workshop's most critical checkpoint is the handoff document's 'peer test' — having another group, with zero involvement in the process, extend at least one new feature using only that document. If they can't understand it, the learner hasn't truly mastered the outcome of 'writing a handoff document that stands on its own'.",
+m6_p3: "Completion criteria require three deliverables: a complete foundation spec pack, a working prototype plus its Vibe Coding Log, and a handoff document that passes the peer test. The post-workshop survey covers four parts: self-assessed learning outcomes (before/after), pacing and content ratings, facilitator and material ratings, and intent to apply afterward.",
+m6_p4: "A brief 30-day follow-up is also recommended: has the learner actually started applying this flow to their own project, which layer of the six-layer framework are they on, and where are they stuck. This validates whether the material actually taught something, more than any in-the-room satisfaction score can.",
+m6_wrapup: "Handoff documents and assessment loop back to the framework's central spirit: specs and documents must stand on their own — whether they're good enough is judged by an uninformed third party, not by the author.",
+m6_terms: [
+  { front:"Peer Handoff Test", back:"Having an uninvolved group take over using only the handoff document, verifying it truly stands on its own" },
+  { front:"Completion Criteria", back:"A complete foundation spec pack, a working prototype + Log, and a handoff document that passes the peer test — all three required" },
+  { front:"Before/After Self-Assessment", back:"The post-workshop survey asking learners to recall their confidence before and after, across five learning outcomes" },
+  { front:"30-Day Follow-up", back:"A brief check-in 30 days after completion confirming whether the flow was actually applied to a real project" },
+  { front:"Vibe Coding Log", back:"Section 7 of the handoff template, recording the Claude Code collaboration process and agent assignments" }
+],
+m6_q: [
+  { q:"What assumption should the handoff document's writing principle be based on?", opts:["The recipient can always ask the author","The recipient can never ask the author anything","The recipient already went through the whole process","The recipient is a professional engineer"], ans:_A1, exp:"Always assume the recipient cannot ask the author anything; the doc must stand alone." },
+  { q:"What is the most effective way to verify a handoff document truly 'stands on its own'?", opts:["Have the instructor reread it themselves","A peer test — an uninvolved group takes over using only the document","Count the document's word count","Ask AI to summarize the document"], ans:_A1, exp:"The peer test is the most direct and convincing verification method." },
+  { q:"Which is NOT one of the three required completion deliverables?", opts:["Foundation spec pack","Working prototype + Vibe Coding Log","Handoff document passing the peer test","A formal written final exam"], ans:_A3, exp:"Completion is verified by deliverables, not a written exam." },
+  { q:"What does Part A of the post-workshop survey mainly assess?", opts:["The facilitator's appearance","Learners' before/after confidence across five learning outcomes","Classroom seating arrangement","Catering satisfaction"], ans:_A1, exp:"Part A is the self-assessed before/after confidence rating." },
+  { q:"Why recommend a 30-day follow-up rather than relying only on the in-room survey?", opts:["It's easier to reach people after 30 days","It better validates whether the material actually taught something and was applied","It's a regulatory requirement","It's purely extra work"], ans:_A1, exp:"Long-term follow-up validates real-world impact better than in-room satisfaction scores." }
+],
+
+mlab_nav: "7. Interactive Lab", mlab_title: "Interactive Lab", mlab_desc: "Four hands-on activities: Kanban management, spec clarity, task-dependency judgment, and self-assessment.",
+mlab_labs: [
+  { title:"Kanban Practice", desc:"Click cards to simulate moving work items across To Do / Doing / Done" },
+  { title:"Spec Clarity Comparison", desc:"Toggle between a clear spec and a vague instruction to see the feature gap directly" },
+  { title:"Task Dependency Judgment", desc:"Decide which of three tasks must be sequenced last before it can start" },
+  { title:"Confidence Self-Assessment", desc:"Rate yourself on five learning outcomes and see a live distribution" }
+],
+
+mres_nav: "8. Learning Resources", mres_title: "Learning Resources", mres_desc: "Further reading to pair with this material, including the source documents and external references.",
+
+date: "Version 2026.07.10",
+copyright: "For Educational Use Only",
+architect_label: "Architect:",
+architect_name: "Prof. Shihmin Lo",
+architect_url: "https://www.ibs.ncnu.edu.tw/index.php/faculty/tenured-professor/299-smlo"
+}
+};
+
+/* ============ H2 ============ */
+const H2 = ({ children, icon, number }) => (
+  <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif font-black text-[#004030] dark:text-[#D8C3A5] mb-6 flex items-center gap-3">
+    {icon && <span className="text-2xl">{icon}</span>}
+    {number !== undefined && <span>{number}.</span>}
+    <span>{children}</span>
+  </h2>
+);
+
+/* ============ LinkCard ============ */
+const LinkCard = ({label, url, desc}) => (
+  <a href={url} target="_blank" rel="noopener noreferrer"
+    className="block bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 hover:border-[#004030] dark:hover:border-[#D8C3A5] hover:shadow-md transition-all group">
+    <span className="font-bold font-serif text-sm text-[#004030] dark:text-[#D8C3A5] group-hover:underline">{label}</span>
+    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mt-1">{desc}</p>
+  </a>
+);
+
+/* ============ FlipCardDeck ============ */
+const FlipCardDeck = ({ terms, t, moduleId, onCardRead }) => {
+  const [groupIdx, setGroupIdx] = useState(0);
+  const [flipped, setFlipped] = useState({});
+  const [readSet, setReadSet] = useState(new Set());
+  const [shownSet, setShownSet] = useState(new Set());
+  const [shuffledOrder] = useState(() => [...Array(terms.length).keys()].sort(() => Math.random() - 0.5));
+
+  const groupSize = 2;
+  const totalGroups = Math.ceil(terms.length / groupSize);
+  const startIdx = groupIdx * groupSize;
+  const currentCardIndices = shuffledOrder.slice(startIdx, startIdx + groupSize);
+
+  useEffect(() => {
+    const newShown = new Set(shownSet);
+    currentCardIndices.forEach(idx => newShown.add(idx));
+    if (newShown.size !== shownSet.size) setShownSet(newShown);
+  }, [groupIdx]);
+
+  const handleFlip = (origIdx) => {
+    setFlipped(f => ({ ...f, [origIdx]: !f[origIdx] }));
+    if (!readSet.has(origIdx)) {
+      const newRead = new Set(readSet); newRead.add(origIdx); setReadSet(newRead);
+      if (onCardRead) onCardRead(moduleId, newRead.size, shownSet.size, terms.length);
+    }
+  };
+
+  const statusText = t.flip_status.replace('{read}', readSet.size).replace('{shown}', shownSet.size).replace('{total}', terms.length);
+
+  return (
+    <div className="mt-8">
+      <h3 className="text-lg font-bold uppercase tracking-wider text-slate-500 mb-2">{t.key_terms}</h3>
+      <p className="text-sm text-slate-400 mb-4">{statusText}</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {currentCardIndices.map((origIdx) => {
+          const term = terms[origIdx];
+          return (
+            <div key={origIdx} className="perspective cursor-pointer h-36" onClick={() => handleFlip(origIdx)}>
+              <div className={`transform-style-3d relative w-full h-full transition-transform duration-500 ${flipped[origIdx] ? 'rotate-y-180' : ''}`}>
+                <div className="backface-hidden absolute inset-0 bg-white dark:bg-slate-800 rounded-xl p-4 flex flex-col items-center justify-center border border-slate-200 dark:border-slate-700 shadow-sm">
+                  <p className="font-serif font-bold text-center text-[#004030] dark:text-[#D8C3A5]">{term.front}</p>
+                  <p className="text-xs text-slate-400 mt-2">{t.flip_prompt}</p>
+                </div>
+                <div className="backface-hidden rotate-y-180 absolute inset-0 bg-[#004030] dark:bg-slate-700 rounded-xl p-4 flex items-center justify-center">
+                  <p className="text-sm text-center text-[#D8C3A5] dark:text-slate-200 leading-relaxed">{term.back}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex items-center gap-3 mt-4">
+        <button onClick={() => { setGroupIdx(0); setFlipped({}); }}
+          className="px-4 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+          {t.flip_retry}
+        </button>
+        <button onClick={() => groupIdx < totalGroups-1 && setGroupIdx(groupIdx+1)}
+          disabled={groupIdx >= totalGroups-1}
+          className="px-4 py-2 text-sm bg-[#004030] dark:bg-[#D8C3A5] text-white dark:text-[#004030] font-bold rounded-lg disabled:opacity-40">
+          {t.flip_next}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+/* ============ ModuleQuiz ============ */
+const ModuleQuiz = ({ questions, t, moduleId, onQuizSubmit, moduleName }) => {
+  const [selected, setSelected] = useState({});
+  const [submitted, setSubmitted] = useState({});
+  const [groupIdx, setGroupIdx] = useState(0);
+  const groupSize = 2;
+
+  const [quizIndices] = useState(() => [...Array(questions.length).keys()].sort(() => Math.random() - 0.5));
+  const totalGroups = Math.ceil(quizIndices.length / groupSize);
+
+  const [shuffledMaps] = useState(() => quizIndices.map(qIdx => {
+    const n = questions[qIdx].opts.length;
+    return [...Array(n).keys()].sort(() => Math.random() - 0.5);
+  }));
+
+  const totalAnswered = Object.keys(selected).length;
+  const computeCorrect = () => {
+    let c = 0;
+    quizIndices.forEach((qIdx, qi) => {
+      if (selected[qi] === undefined) return;
+      if (shuffledMaps[qi][selected[qi]] === _d(questions[qIdx].ans)) c++;
+    });
+    return c;
+  };
+  const statusText = t.quiz_status.replace('{correct}', computeCorrect()).replace('{answered}', totalAnswered).replace('{total}', quizIndices.length);
+
+  const currentStart = groupIdx * groupSize;
+  const currentIndices = quizIndices.slice(currentStart, currentStart + groupSize);
+
+  const handleGroupSubmit = () => {
+    const allDone = currentIndices.every((_, i) => selected[currentStart + i] !== undefined);
+    if (!allDone) return;
+    setSubmitted(s => ({ ...s, [groupIdx]: true }));
+    if (groupIdx === totalGroups - 1 || Object.keys(submitted).length + 1 === totalGroups) {
+      const wrongQs = [];
+      let correct = 0;
+      quizIndices.forEach((qIdx, qi) => {
+        if (selected[qi] === undefined) return;
+        if (shuffledMaps[qi][selected[qi]] === _d(questions[qIdx].ans)) correct++;
+        else wrongQs.push(questions[qIdx].q);
+      });
+      onQuizSubmit(moduleId, correct, quizIndices.length, wrongQs, moduleName);
+    }
+  };
+
+  return (
+    <div className="mt-8 bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
+      <h3 className="text-lg font-bold font-serif text-[#004030] dark:text-[#D8C3A5] mb-2">{t.quiz_title}</h3>
+      <p className="text-sm text-slate-400 mb-6">{statusText}</p>
+      {currentIndices.map((qIdx, localI) => {
+        const qi = currentStart + localI;
+        const q = questions[qIdx];
+        const sMap = shuffledMaps[qi];
+        const isGrpSub = !!submitted[groupIdx];
+        return (
+          <div key={qIdx} className="mb-6">
+            <p className="font-bold mb-3">{qi+1}. {q.q}</p>
+            <div className="space-y-2">
+              {sMap.map((origIdx, dIdx) => {
+                const isCorrect = origIdx === _d(q.ans);
+                const isSel = selected[qi] === dIdx;
+                return (
+                  <button key={dIdx} onClick={() => !isGrpSub && setSelected(s => ({...s, [qi]: dIdx}))}
+                    className={`w-full text-left px-4 py-3 rounded-lg border transition-all text-sm
+                      ${isGrpSub
+                        ? isCorrect ? 'bg-green-100 border-green-500 dark:bg-green-900/30'
+                          : isSel ? 'bg-red-100 border-red-400 dark:bg-red-900/30' : 'border-slate-200 dark:border-slate-700'
+                        : isSel ? 'border-[#004030] dark:border-[#D8C3A5] bg-[#004030]/5' : 'border-slate-200 dark:border-slate-700 hover:border-slate-400'
+                      }`}>
+                    {q.opts[origIdx]}
+                  </button>
+                );
+              })}
+            </div>
+            {isGrpSub && (
+              <p className={`mt-2 text-sm italic ${shuffledMaps[qi][selected[qi]] === _d(q.ans) ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                {shuffledMaps[qi][selected[qi]] === _d(q.ans) ? `✓ ${t.correct}` : `✗ ${t.incorrect}`} — {t.explanation}：{q.exp}
+              </p>
+            )}
+          </div>
+        );
+      })}
+      <div className="flex items-center gap-3">
+        {!submitted[groupIdx]
+          ? <button onClick={handleGroupSubmit}
+              disabled={!currentIndices.every((_,i) => selected[currentStart+i] !== undefined)}
+              className="px-6 py-2 bg-[#004030] dark:bg-[#D8C3A5] text-white dark:text-[#004030] font-bold rounded-lg disabled:opacity-40">
+              {t.submit}
+            </button>
+          : <>
+              {groupIdx < totalGroups-1 && (
+                <button onClick={() => setGroupIdx(groupIdx+1)}
+                  className="px-6 py-2 bg-[#004030] dark:bg-[#D8C3A5] text-white dark:text-[#004030] font-bold rounded-lg">
+                  {t.quiz_next}
+                </button>
+              )}
+              <button onClick={() => { setGroupIdx(0); setSelected({}); setSubmitted({}); }}
+                className="px-6 py-2 border border-[#004030] dark:border-[#D8C3A5] text-[#004030] dark:text-[#D8C3A5] font-bold rounded-lg">
+                {t.quiz_retry}
+              </button>
+            </>
+        }
+      </div>
+    </div>
+  );
+};
+
+/* ============ Lab 1: KanbanLab ============ */
+const KANBAN_SEED = [
+  { id:1, zh:"課程頁面 (S1)", en:"Course Page (S1)" },
+  { id:2, zh:"雙語問答 (S2)", en:"Bilingual Q&A (S2)" },
+  { id:3, zh:"對話紀錄 (S3)", en:"Conversation Log (S3)" },
+  { id:4, zh:"每週報表 (S4)", en:"Weekly Report (S4)" },
+  { id:5, zh:"信心不足告知 (S5)", en:"Confidence Disclosure (S5)" }
+];
+const KanbanLab = ({ lang }) => {
+  const L = lang === 'zh'
+    ? { todo:"待做", doing:"進行中", done:"已完成", hint:"點擊卡片，依序在三欄之間移動" }
+    : { todo:"To Do", doing:"Doing", done:"Done", hint:"Click a card to cycle it through the columns" };
+  const [cards, setCards] = useState(KANBAN_SEED.map((c,i) => ({ ...c, status: i===0?'done': i===1?'doing':'todo' })));
+  const cycle = (id) => setCards(cs => cs.map(c => c.id===id
+    ? { ...c, status: c.status==='todo'?'doing':c.status==='doing'?'done':'todo' } : c));
+  const col = (status) => cards.filter(c => c.status===status);
+  const Column = ({status,label}) => (
+    <div className="flex-1 min-w-0 bg-slate-100 dark:bg-slate-900/50 rounded-xl p-3">
+      <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">{label}</p>
+      <div className="space-y-2">
+        {col(status).map(c => (
+          <button key={c.id} onClick={() => cycle(c.id)}
+            className="w-full text-left text-sm px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-[#004030] dark:hover:border-[#D8C3A5]">
+            {lang==='zh' ? c.zh : c.en}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+      <p className="text-sm text-slate-400 mb-4">{L.hint}</p>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Column status="todo" label={L.todo}/>
+        <Column status="doing" label={L.doing}/>
+        <Column status="done" label={L.done}/>
+      </div>
+    </div>
+  );
+};
+
+/* ============ Lab 2: SpecClarityLab ============ */
+const SPEC_ITEMS = [
+  { zh:"中英雙語提問與回覆", en:"Bilingual question & answer", clear:true, vague:false },
+  { zh:"對話全部紀錄可匯出", en:"All conversations logged & exportable", clear:true, vague:false },
+  { zh:"不確定時明確告知", en:"Clear disclosure when unsure", clear:true, vague:false },
+  { zh:"每週卡關主題報表", en:"Weekly stuck-topic report", clear:true, vague:false },
+  { zh:"能顯示課程16週大綱", en:"Shows 16-week syllabus", clear:true, vague:true }
+];
+const SpecClarityLab = ({ lang }) => {
+  const [mode, setMode] = useState('clear');
+  const L = lang==='zh'
+    ? { clear:"清楚規格", vague:"模糊指令", have:"✓ 有做到", miss:"✕ 缺少" }
+    : { clear:"Clear Spec", vague:"Vague Instruction", have:"✓ Included", miss:"✕ Missing" };
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+      <div className="flex gap-2 mb-4">
+        <button onClick={() => setMode('clear')} className={`px-4 py-2 text-sm font-bold rounded-lg border ${mode==='clear' ? 'bg-[#004030] dark:bg-[#D8C3A5] text-white dark:text-[#004030] border-[#004030] dark:border-[#D8C3A5]' : 'border-slate-300 dark:border-slate-600'}`}>{L.clear}</button>
+        <button onClick={() => setMode('vague')} className={`px-4 py-2 text-sm font-bold rounded-lg border ${mode==='vague' ? 'bg-[#004030] dark:bg-[#D8C3A5] text-white dark:text-[#004030] border-[#004030] dark:border-[#D8C3A5]' : 'border-slate-300 dark:border-slate-600'}`}>{L.vague}</button>
+      </div>
+      <ul className="space-y-2">
+        {SPEC_ITEMS.map((item, i) => {
+          const present = mode==='clear' ? item.clear : item.vague;
+          return (
+            <li key={i} className={`text-sm px-3 py-2 rounded-lg ${present ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20' : 'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 line-through'}`}>
+              {present ? L.have : L.miss} — {lang==='zh' ? item.zh : item.en}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+};
+
+/* ============ Lab 3: DependencyLab ============ */
+const DependencyLab = ({ lang }) => {
+  const L = lang==='zh'
+    ? { q:"三個任務：A 課程頁面、B 雙語問答、C 每週報表。哪一個必須排在最後才能開始？",
+        a:"任務 A", b:"任務 B", c:"任務 C",
+        correct:"✓ 答對了！報表（C）依賴問答（B）產生的對話資料格式，必須等 B 完成後才能開始。",
+        wrong:"✗ 再想想——回頭看 Graphiti 關聯圖，WeeklyReport 是「依 Conversation 統計而成」。" }
+    : { q:"Three tasks: A course page, B bilingual Q&A, C weekly report. Which one must come last?",
+        a:"Task A", b:"Task B", c:"Task C",
+        correct:"✓ Correct! The report (C) depends on the conversation data format produced by Q&A (B), so it must wait until B is done.",
+        wrong:"✗ Think again — recall the Graphiti diagram: WeeklyReport is 'aggregated from Conversation'." };
+  const [picked, setPicked] = useState(null);
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+      <p className="text-sm mb-4">{L.q}</p>
+      <div className="flex gap-2 flex-wrap">
+        {['A','B','C'].map(k => (
+          <button key={k} onClick={() => setPicked(k)}
+            className={`px-4 py-2 text-sm font-bold rounded-lg border ${picked===k ? 'bg-[#004030] dark:bg-[#D8C3A5] text-white dark:text-[#004030] border-[#004030] dark:border-[#D8C3A5]' : 'border-slate-300 dark:border-slate-600'}`}>
+            {k==='A'?L.a:k==='B'?L.b:L.c}
+          </button>
+        ))}
+      </div>
+      {picked && (
+        <p className={`mt-4 text-sm font-medium ${picked==='C' ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+          {picked==='C' ? L.correct : L.wrong}
+        </p>
+      )}
+    </div>
+  );
+};
+
+/* ============ Lab 4: ConfidenceSelfAssessLab ============ */
+const ConfidenceSelfAssessLab = ({ lang }) => {
+  const items = lang==='zh'
+    ? ["說出六層架構並解釋順序重要性","寫出清楚的專案規格","用Claude Code做出可運作原型","寫出可獨立使用的交接文件","帶領團隊做AI專案"]
+    : ["Explain the six layers and why order matters","Write a clear project spec","Build a working prototype with Claude Code","Write a handoff doc that stands alone","Lead a team through an AI project"];
+  const [vals, setVals] = useState([3,3,3,3,3]);
+  const avg = (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+      <div className="space-y-4">
+        {items.map((label, i) => (
+          <div key={i}>
+            <div className="flex justify-between text-sm mb-1">
+              <span>{label}</span><span className="font-bold text-[#004030] dark:text-[#D8C3A5]">{vals[i]}</span>
+            </div>
+            <input type="range" min="1" max="5" value={vals[i]}
+              onChange={(e) => setVals(v => v.map((x,j) => j===i ? Number(e.target.value) : x))}
+              className="w-full accent-[#004030] dark:accent-[#D8C3A5]" />
+          </div>
+        ))}
+      </div>
+      <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700 flex items-center gap-3">
+        <span className="text-sm text-slate-500">{lang==='zh' ? "平均信心值" : "Average Confidence"}</span>
+        <span className="text-2xl font-black text-[#004030] dark:text-[#D8C3A5]">{avg} / 5</span>
+      </div>
+    </div>
+  );
+};
+
+/* ============ Module SVG ============ */
+const ModuleSVG = ({ id }) => {
+  const cls = "text-[#004030] dark:text-[#D8C3A5]";
+  if (id===1) return (
+    <svg viewBox="0 0 320 140" className={`w-full max-w-md h-auto ${cls}`}>
+      {['Needs','Goals','Spec','Graphiti/Schema','AI Coding'].map((l,i) => (
+        <g key={i}>
+          <rect x="10" y={10+i*26} width="300" height="20" rx="4" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+          <text x="160" y={24+i*26} textAnchor="middle" fontSize="11" fill="currentColor">{l}</text>
+        </g>
+      ))}
+    </svg>
+  );
+  if (id===2) return (
+    <svg viewBox="0 0 320 120" className={`w-full max-w-md h-auto ${cls}`}>
+      <rect x="10" y="10" width="130" height="40" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+      <text x="75" y="34" textAnchor="middle" fontSize="11" fill="currentColor">Teacher</text>
+      <line x1="145" y1="30" x2="175" y2="30" stroke="currentColor" strokeWidth="1.5"/>
+      <rect x="180" y="10" width="130" height="40" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+      <text x="245" y="34" textAnchor="middle" fontSize="11" fill="currentColor">PM / PjM</text>
+      <rect x="10" y="70" width="130" height="40" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+      <text x="75" y="94" textAnchor="middle" fontSize="11" fill="currentColor">Claude Code</text>
+      <line x1="145" y1="90" x2="175" y2="90" stroke="currentColor" strokeWidth="1.5"/>
+      <rect x="180" y="70" width="130" height="40" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+      <text x="245" y="94" textAnchor="middle" fontSize="11" fill="currentColor">Implementer</text>
+    </svg>
+  );
+  if (id===3) return (
+    <svg viewBox="0 0 320 110" className={`w-full max-w-md h-auto ${cls}`}>
+      {['To Do','Doing','Done'].map((l,i) => (
+        <g key={i}>
+          <rect x={10+i*105} y="10" width="95" height="90" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+          <text x={57+i*105} y="26" textAnchor="middle" fontSize="10" fill="currentColor">{l}</text>
+        </g>
+      ))}
+    </svg>
+  );
+  if (id===4) return (
+    <svg viewBox="0 0 320 110" className={`w-full max-w-md h-auto ${cls}`}>
+      <rect x="10" y="10" width="140" height="90" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+      <text x="80" y="30" textAnchor="middle" fontSize="11" fill="currentColor">Clear Spec</text>
+      <text x="80" y="55" textAnchor="middle" fontSize="18" fill="currentColor">✓✓✓</text>
+      <rect x="170" y="10" width="140" height="90" rx="6" strokeDasharray="4 3" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+      <text x="240" y="30" textAnchor="middle" fontSize="11" fill="currentColor">Vague Instruction</text>
+      <text x="240" y="55" textAnchor="middle" fontSize="18" fill="currentColor">✕✕✕</text>
+    </svg>
+  );
+  if (id===5) return (
+    <svg viewBox="0 0 320 130" className={`w-full max-w-md h-auto ${cls}`}>
+      <rect x="120" y="6" width="80" height="26" rx="5" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+      <text x="160" y="23" textAnchor="middle" fontSize="9" fill="currentColor">Claude Code</text>
+      <line x1="160" y1="32" x2="60" y2="70" stroke="currentColor" strokeWidth="1.5"/>
+      <line x1="160" y1="32" x2="160" y2="70" stroke="currentColor" strokeWidth="1.5"/>
+      <line x1="160" y1="32" x2="260" y2="70" stroke="currentColor" strokeWidth="1.5"/>
+      {['Explorer','Builder','Reviewer'].map((l,i) => (
+        <g key={i}>
+          <rect x={20+i*100} y="70" width="80" height="26" rx="5" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+          <text x={60+i*100} y="87" textAnchor="middle" fontSize="9" fill="currentColor">{l}</text>
+        </g>
+      ))}
+      <line x1="160" y1="96" x2="160" y2="112" stroke="currentColor" strokeWidth="1.5"/>
+    </svg>
+  );
+  if (id===6) return (
+    <svg viewBox="0 0 320 110" className={`w-full max-w-md h-auto ${cls}`}>
+      <rect x="10" y="10" width="300" height="90" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+      {[0,1,2,3].map(i => (
+        <g key={i}>
+          <rect x="26" y={24+i*18} width="10" height="10" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+          <line x1="44" y1={29+i*18} x2="290" y2={29+i*18} stroke="currentColor" strokeWidth="1"/>
+        </g>
+      ))}
+    </svg>
+  );
+  return null;
+};
+
+/* ============ Learn Module Renderer ============ */
+const LearnModule = ({ module, t, analytics, handleCardRead, handleQuizSubmit, moduleTitleFn }) => {
+  const mk = `m${module}`;
+  return (
+    <div className="space-y-6 text-lg leading-relaxed text-slate-700 dark:text-slate-300 animate-fade-in">
+      <H2 icon={MODULE_ICONS[module]} number={module}>{t[`${mk}_title`]}</H2>
+      <div className="bg-[#004030]/5 dark:bg-[#D8C3A5]/5 rounded-xl p-5 border-l-4 border-[#D8C3A5]">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-2">{t.overview_label}</h3>
+        <p>{t[`${mk}_overview`]}</p>
+      </div>
+      <div>
+        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">{t.highlights_label}</h3>
+        <div className="flex flex-wrap gap-2">
+          {t[`${mk}_highlights`].map((h,i) => (
+            <span key={i} className="px-3 py-1 bg-[#004030]/10 dark:bg-[#D8C3A5]/10 text-[#004030] dark:text-[#D8C3A5] rounded-full text-sm font-medium">{h}</span>
+          ))}
+        </div>
+      </div>
+      <div>
+        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">{t.deep_dive_label}</h3>
+        <div className="space-y-4">
+          <p>{t[`${mk}_p1`]}</p>
+          <p className="p-4 bg-slate-100 dark:bg-slate-800 rounded-lg italic font-serif">{t[`${mk}_p2`]}</p>
+          <p>{t[`${mk}_p3`]}</p>
+          {t[`${mk}_p4`] && <p>{t[`${mk}_p4`]}</p>}
+        </div>
+      </div>
+      <div className="flex justify-center py-2">
+        <ModuleSVG id={module} />
+      </div>
+      <FlipCardDeck key={`cards-${module}`} terms={t[`${mk}_terms`]} t={t} moduleId={module} onCardRead={handleCardRead} />
+      <div className="bg-slate-100 dark:bg-slate-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-2">{t.wrapup_label}</h3>
+        <p className="italic">{t[`${mk}_wrapup`]}</p>
+      </div>
+      <ModuleQuiz key={`quiz-${module}`} questions={t[`${mk}_q`]} t={t} moduleId={module} onQuizSubmit={handleQuizSubmit} moduleName={t[`${mk}_title`]} />
+    </div>
+  );
+};
+
+/* ============ Constants ============ */
+const NUM_LEARN = 6;
+const TOTAL = 1 + NUM_LEARN + 3;
+const IDX_LAB = NUM_LEARN + 1;
+const IDX_RES = NUM_LEARN + 2;
+const IDX_ANA = NUM_LEARN + 3;
+const MODULE_ICONS = ['📋','🏛️','🎯','🔄','🧪','🤖','🤝','🧫','🌐','📊'];
+
+function moduleNavTitle(t, id){
+  if (id===0) return t.m0_nav;
+  if (id>=1 && id<=NUM_LEARN) return t[`m${id}_nav`];
+  if (id===IDX_LAB) return t.mlab_nav;
+  if (id===IDX_RES) return t.mres_nav;
+  return t.analytics_title;
+}
+function moduleShortTitle(t, id){
+  if (id===0) return t.m0_title;
+  if (id>=1 && id<=NUM_LEARN) return t[`m${id}_title`];
+  if (id===IDX_LAB) return t.mlab_title;
+  if (id===IDX_RES) return t.mres_title;
+  return t.analytics_title;
+}
+
+/* ============ App ============ */
+function App() {
+  const LS_KEY = 'ASW_SPA_analytics';
+  const LS_STU = 'ASW_SPA_student';
+  const loadLS = (key, fb) => { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fb; } catch { return fb; } };
+
+  const [lang, setLang] = useState('en');
+  const [isDark, setIsDark] = useState(true);
+  const [module, setModule] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [ttsState, setTtsState] = useState('idle');
+  const [toastMsg, setToastMsg] = useState('');
+  const [studentInfo, setStudentInfo] = useState(() => loadLS(LS_STU, { group:'', dept:'', id:'', nameEn:'', nameZh:'' }));
+  const [analytics, setAnalytics] = useState(() => loadLS(LS_KEY, {
+    time: Array(TOTAL).fill(0), clicks: Array(TOTAL).fill(0),
+    quizCorrect: Array(TOTAL).fill(0), quizTotal: Array(TOTAL).fill(0),
+    cardsRead: Array(TOTAL).fill(0), cardsTotal: Array(TOTAL).fill(0),
+    wrongTopics: {}
+  }));
+  const menuRef = useRef(null);
+  const startRef = useRef(Date.now());
+  const t = dict[lang];
+
+  useEffect(() => { document.documentElement.classList.toggle('dark', isDark); }, [isDark]);
+  useEffect(() => { try { localStorage.setItem(LS_KEY, JSON.stringify(analytics)); } catch {} }, [analytics]);
+  useEffect(() => { try { localStorage.setItem(LS_STU, JSON.stringify(studentInfo)); } catch {} }, [studentInfo]);
+  useEffect(() => { _toastFn = () => { setToastMsg(t.copyright_toast); setTimeout(() => setToastMsg(''), 2000); }; }, [lang]);
+  useEffect(() => {
+    const onClickOutside = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false); };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, []);
+  useEffect(() => {
+    startRef.current = Date.now();
+    return () => {
+      const elapsed = Math.round((Date.now() - startRef.current) / 1000);
+      if (elapsed > 0) setAnalytics(a => { const time=[...a.time]; time[module]=(time[module]||0)+elapsed; return {...a, time}; });
+    };
+  }, [module]);
+
+  const handleQuizSubmit = (mid, correct, total, wrongQs, moduleName) => {
+    setAnalytics(a => {
+      const qc=[...a.quizCorrect], qt=[...a.quizTotal];
+      qc[mid]=correct; qt[mid]=total;
+      const wt={...a.wrongTopics}; wt[mid]=wrongQs||[];
+      return {...a, quizCorrect:qc, quizTotal:qt, wrongTopics:wt};
+    });
+  };
+  const handleCardRead = (mid, readCount, shownCount, totalCount) => {
+    setAnalytics(a => {
+      const cr=[...a.cardsRead], ct=[...a.cardsTotal];
+      cr[mid]=readCount; ct[mid]=totalCount;
+      return {...a, cardsRead:cr, cardsTotal:ct};
+    });
+  };
+  const handleContentClick = () => setAnalytics(a => { const clicks=[...a.clicks]; clicks[module]=(clicks[module]||0)+1; return {...a, clicks}; });
+
+  const goTo = (id) => { setModule(id); setMenuOpen(false); window.scrollTo({top:0, behavior:'smooth'}); };
+
+  const clearHistory = () => {
+    if (!window.confirm(t.analytics_wp_clear_confirm)) return;
+    const fresh = { time:Array(TOTAL).fill(0), clicks:Array(TOTAL).fill(0), quizCorrect:Array(TOTAL).fill(0), quizTotal:Array(TOTAL).fill(0), cardsRead:Array(TOTAL).fill(0), cardsTotal:Array(TOTAL).fill(0), wrongTopics:{} };
+    setAnalytics(fresh);
+    try { localStorage.setItem(LS_KEY, JSON.stringify(fresh)); } catch {}
+  };
+
+  const exportCSV = () => {
+    const rows = [['Module','Time(sec)','Clicks','Quiz Correct','Quiz Total','Cards Read','Cards Total','Wrong Questions'].join(',')];
+    for (let i=0;i<TOTAL;i++){
+      const wrong = (analytics.wrongTopics[i]||[]).join(' | ').replace(/"/g,"'");
+      rows.push([`"${moduleShortTitle(dict.en,i).replace(/"/g,"'")}"`, analytics.time[i]||0, analytics.clicks[i]||0,
+        analytics.quizCorrect[i]||0, analytics.quizTotal[i]||0, analytics.cardsRead[i]||0, analytics.cardsTotal[i]||0, `"${wrong}"`].join(','));
+    }
+    const csv = '﻿' + rows.join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const dateStr = new Date().toISOString().slice(0,10).replace(/-/g,'');
+    const fname = `${dict.zh.brand}${dict.zh.title}_${sanitizeName(studentInfo.nameEn||studentInfo.nameZh||'anon')}_${dateStr}.csv`;
+    a.href = url; a.download = fname; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const formFilled = studentInfo.group && studentInfo.dept && studentInfo.id && studentInfo.nameEn && studentInfo.nameZh;
+
+  const handleTTS = (action) => {
+    if (!('speechSynthesis' in window)) return;
+    if (action === 'stop') { speechSynthesis.cancel(); setTtsState('idle'); return; }
+    if (action === 'pause') { speechSynthesis.pause(); setTtsState('paused'); return; }
+    if (action === 'play') {
+      if (ttsState === 'paused') { speechSynthesis.resume(); setTtsState('playing'); return; }
+      speechSynthesis.cancel();
+      const sep = lang === 'zh' ? '。 ' : '. ';
+      let texts = [];
+      if (module === 0) {
+        texts = [t.m0_title, t.m0_intro, t.m0_why, t.m0_why_desc,
+          ...(t.m0_stats||[]).map(s=>`${s.label}: ${s.val}`),
+          ...(t.m0_modules||[]).map(m=>`${m.title}. ${m.desc}`)];
+      } else if (module >= 1 && module <= NUM_LEARN) {
+        const mk = `m${module}`;
+        texts = [t[`${mk}_title`], t[`${mk}_overview`], ...(t[`${mk}_highlights`]||[]),
+          t[`${mk}_p1`], t[`${mk}_p2`], t[`${mk}_p3`], t[`${mk}_p4`],
+          t[`${mk}_wrapup`], ...(t[`${mk}_terms`]||[]).flatMap(c=>[c.front, c.back])];
+      } else if (module === IDX_LAB) {
+        texts = [t.mlab_title, t.mlab_desc, ...(t.mlab_labs||[]).map(l=>`${l.title}. ${l.desc||''}`)];
+      } else if (module === IDX_RES) {
+        texts = [t.mres_title, t.mres_desc];
+      } else if (module === IDX_ANA) {
+        const tc = analytics.quizCorrect.reduce((a,b)=>a+b,0);
+        const ta = analytics.quizTotal.reduce((a,b)=>a+b,0);
+        const oa = ta>0 ? Math.round(tc/ta*100) : 0;
+        const wk = [];
+        for (let i=1;i<=NUM_LEARN;i++){
+          if (analytics.quizTotal[i]>0){
+            const a2 = Math.round(analytics.quizCorrect[i]/analytics.quizTotal[i]*100);
+            if (a2<75) wk.push({name:moduleShortTitle(t,i), acc:a2});
+          }
+        }
+        wk.sort((a,b)=>a.acc-b.acc);
+        texts = [t.analytics_title, t.analytics_desc,
+          `${t.analytics_total_time}: ${analytics.time.reduce((a,b)=>a+b,0)}${t.analytics_sec}`,
+          `${t.analytics_total_clicks}: ${analytics.clicks.reduce((a,b)=>a+b,0)}${t.analytics_times}`,
+          `${t.analytics_overall_acc}: ${oa}%`];
+        if (wk.length) { texts.push(t.analytics_wp_tts_intro); wk.forEach(w=>texts.push(t.analytics_wp_tts_module.replace('{name}',w.name).replace('{acc}',w.acc))); }
+        else if (ta>0) texts.push(t.analytics_wp_tts_allpass);
+      }
+      texts = texts.filter(Boolean);
+      const utt = new SpeechSynthesisUtterance(texts.join(sep));
+      utt.rate = 0.95;
+      const voices = speechSynthesis.getVoices();
+      if (lang==='zh') {
+        const v = voices.find(v=>v.lang==='zh-TW'&&v.name.includes('Yating')) || voices.find(v=>v.lang==='zh-TW') || voices.find(v=>v.lang.startsWith('zh'));
+        if (v) utt.voice = v; utt.lang = 'zh-TW';
+      } else {
+        const v = voices.find(v=>v.lang==='en-GB'&&(v.name.includes('Male')||v.name.includes('Daniel'))) || voices.find(v=>v.lang==='en-GB') || voices.find(v=>v.lang.startsWith('en'));
+        if (v) utt.voice = v; utt.lang = 'en-GB';
+      }
+      utt.onend = () => setTtsState('idle');
+      utt.onerror = () => setTtsState('idle');
+      speechSynthesis.speak(utt);
+      setTtsState('playing');
+    }
+  };
+
+  const menuList = Array.from({length:TOTAL}, (_,i) => i);
+  const totalTime = analytics.time.reduce((a,b)=>a+b,0);
+  const totalClicks = analytics.clicks.reduce((a,b)=>a+b,0);
+  const tCorrect = analytics.quizCorrect.reduce((a,b)=>a+b,0);
+  const tTotal = analytics.quizTotal.reduce((a,b)=>a+b,0);
+  const overallAcc = tTotal>0 ? Math.round(tCorrect/tTotal*100) : 0;
+  const tCardsRead = analytics.cardsRead.reduce((a,b)=>a+b,0);
+  const tCardsTotal = analytics.cardsTotal.reduce((a,b)=>a+b,0);
+  const cardUsage = tCardsTotal>0 ? Math.round(tCardsRead/tCardsTotal*100) : 0;
+
+  return (
+    <div className="min-h-screen flex flex-col font-sans">
+      {toastMsg && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] bg-slate-900 text-white text-sm px-4 py-2 rounded-lg shadow-xl">
+          {toastMsg}
+        </div>
+      )}
+
+      <header className="fixed top-0 left-0 right-0 h-16 bg-[#004030] dark:bg-slate-900 text-white z-50 shadow-lg border-b border-[#D8C3A5]/30">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-1 min-w-0">
+            <div className="relative" ref={menuRef}>
+              <button onClick={() => setMenuOpen(!menuOpen)} className="p-2 hover:bg-white/10 rounded-lg"><IconMenu/></button>
+              {menuOpen && (
+                <div className="absolute top-full left-0 mt-1 w-72 max-w-[calc(100vw-2rem)] max-h-[calc(100vh-5rem)] overflow-y-auto bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 z-[100] text-slate-800 dark:text-slate-100">
+                  {menuList.map(id => (
+                    <button key={id} onClick={() => goTo(id)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-slate-100 dark:hover:bg-slate-700 ${module===id ? 'bg-[#004030]/10 dark:bg-[#D8C3A5]/10 font-bold' : ''}`}>
+                      <span>{MODULE_ICONS[id]}</span><span className="truncate">{moduleNavTitle(t, id)}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button onClick={() => goTo(0)} className="p-2 hover:bg-white/10 rounded-lg" aria-label={t.nav_home}><IconHome size={18}/></button>
+            <button onClick={() => window.scrollTo({top:0,behavior:'smooth'})} className="flex items-center gap-2 min-w-0 px-1">
+              <span className="font-serif font-black text-[#D8C3A5] text-lg tracking-widest shrink-0">{t.brand}</span>
+              <span className="hidden sm:inline font-serif font-bold text-sm md:text-base truncate">{t.title}</span>
+            </button>
+          </div>
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <button onClick={() => handleTTS(ttsState==='playing' ? 'pause' : 'play')} className="p-2 hover:bg-white/10 rounded-lg" aria-label={t.audio_read}>
+              {ttsState==='playing' ? <IconPause size={18}/> : <IconPlay size={18}/>}
+            </button>
+            <button onClick={() => handleTTS('stop')} className="p-2 hover:bg-white/10 rounded-lg"><IconSquare size={16}/></button>
+            <button onClick={() => setLang(lang==='zh'?'en':'zh')} className="px-2 py-1.5 text-xs font-bold border border-white/30 rounded-lg hover:bg-white/10 flex items-center gap-1">
+              <IconGlobe size={14}/>{lang==='zh' ? 'EN' : '中'}
+            </button>
+            <button onClick={() => setIsDark(!isDark)} className="p-2 hover:bg-white/10 rounded-lg">
+              {isDark ? <IconSun size={18}/> : <IconMoon size={18}/>}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex-1 flex pt-16 max-w-7xl mx-auto w-full">
+        <aside className="hidden md:block w-64 shrink-0 border-r border-slate-200 dark:border-slate-700 p-4 sticky top-16 self-start max-h-[calc(100vh-4rem)] overflow-y-auto">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">{t.nav_modules}</p>
+          <div className="space-y-1">
+            {menuList.map(id => (
+              <button key={id} onClick={() => goTo(id)}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left ${module===id ? 'bg-[#004030] dark:bg-[#D8C3A5] text-white dark:text-[#004030] font-bold' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                <span>{MODULE_ICONS[id]}</span><span className="truncate">{moduleNavTitle(t, id)}</span>
+              </button>
+            ))}
+          </div>
+        </aside>
+
+        <main className="flex-1 min-w-0 px-4 sm:px-6 md:px-10 py-8" onClick={handleContentClick}>
+          {module === 0 && (
+            <div className="animate-fade-in">
+              <div className="bg-gradient-to-br from-[#004030] to-[#00291f] dark:from-slate-900 dark:to-slate-800 text-white rounded-2xl p-8 md:p-12 mb-8">
+                <p className="text-[#D8C3A5] font-bold text-sm uppercase tracking-widest mb-3">{t.subtitle}</p>
+                <h1 className="text-3xl md:text-5xl font-serif font-black mb-4">{t.m0_title}</h1>
+                <p className="text-slate-200 leading-relaxed max-w-3xl">{t.m0_intro}</p>
+                <button onClick={() => goTo(1)} className="mt-6 px-6 py-3 bg-[#D8C3A5] text-[#004030] font-bold rounded-lg hover:opacity-90">{t.m0_start}</button>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                {t.m0_stats.map((s,i) => (
+                  <div key={i} className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-center">
+                    <p className="text-2xl font-black text-[#004030] dark:text-[#D8C3A5]">{s.val}</p>
+                    <p className="text-xs text-slate-500 mt-1">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="bg-slate-100 dark:bg-slate-800 rounded-xl p-6 mb-8">
+                <h3 className="font-serif font-bold text-lg text-[#004030] dark:text-[#D8C3A5] mb-2">{t.m0_why}</h3>
+                <p className="text-slate-600 dark:text-slate-300">{t.m0_why_desc}</p>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {t.m0_modules.map((m,i) => (
+                  <button key={i} onClick={() => goTo(i+1)} className="text-left bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 hover:border-[#004030] dark:hover:border-[#D8C3A5] hover:shadow-md transition-all group">
+                    <span className="text-xs font-mono text-[#D8C3A5]">{m.num}</span>
+                    <h4 className="font-serif font-bold text-[#004030] dark:text-[#D8C3A5] group-hover:underline">{m.title}</h4>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{m.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {module >= 1 && module <= NUM_LEARN && (
+            <LearnModule module={module} t={t} analytics={analytics} handleCardRead={handleCardRead} handleQuizSubmit={handleQuizSubmit} />
+          )}
+
+          {module === IDX_LAB && (
+            <div className="animate-fade-in space-y-8">
+              <H2 icon={MODULE_ICONS[IDX_LAB]} number={NUM_LEARN+1}>{t.mlab_title}</H2>
+              <p className="text-slate-600 dark:text-slate-300">{t.mlab_desc}</p>
+              <div>
+                <h3 className="font-serif font-bold text-lg mb-3 text-[#004030] dark:text-[#D8C3A5]">{t.mlab_labs[0].title}</h3>
+                <p className="text-sm text-slate-500 mb-3">{t.mlab_labs[0].desc}</p>
+                <KanbanLab lang={lang} />
+              </div>
+              <div>
+                <h3 className="font-serif font-bold text-lg mb-3 text-[#004030] dark:text-[#D8C3A5]">{t.mlab_labs[1].title}</h3>
+                <p className="text-sm text-slate-500 mb-3">{t.mlab_labs[1].desc}</p>
+                <SpecClarityLab lang={lang} />
+              </div>
+              <div>
+                <h3 className="font-serif font-bold text-lg mb-3 text-[#004030] dark:text-[#D8C3A5]">{t.mlab_labs[2].title}</h3>
+                <p className="text-sm text-slate-500 mb-3">{t.mlab_labs[2].desc}</p>
+                <DependencyLab lang={lang} />
+              </div>
+              <div>
+                <h3 className="font-serif font-bold text-lg mb-3 text-[#004030] dark:text-[#D8C3A5]">{t.mlab_labs[3].title}</h3>
+                <p className="text-sm text-slate-500 mb-3">{t.mlab_labs[3].desc}</p>
+                <ConfidenceSelfAssessLab lang={lang} />
+              </div>
+            </div>
+          )}
+
+          {module === IDX_RES && (
+            <div className="animate-fade-in space-y-4">
+              <H2 icon={MODULE_ICONS[IDX_RES]} number={NUM_LEARN+2}>{t.mres_title}</H2>
+              <p className="text-slate-600 dark:text-slate-300 mb-4">{t.mres_desc}</p>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <LinkCard label="工作坊行銷簡報 Marketing Deck" url="工作坊行銷簡報.html" desc={lang==='zh' ? "13頁動畫簡報，含雙語語音導覽" : "13-slide animated deck with bilingual narration"} />
+                <LinkCard label="交接文件範本 Handoff Template" url="交接文件範本_AI-native專案.md" desc={lang==='zh' ? "可直接複製使用的空白交接文件" : "A reusable blank handoff document template"} />
+                <LinkCard label="AI-native 知識庫 Knowledge Base" url="AI-native開發流程_KnowledgeBase.md" desc={lang==='zh' ? "六層架構完整概念文件" : "The full six-layer concept document"} />
+                <LinkCard label="Prof. Shihmin Lo — NCNU" url="https://www.ibs.ncnu.edu.tw/index.php/faculty/tenured-professor/299-smlo" desc={lang==='zh' ? "駱世民教授 NCNU 教師頁面" : "Faculty page at NCNU"} />
+                <LinkCard label="getzep/graphiti (GitHub)" url="https://github.com/getzep/graphiti" desc={lang==='zh' ? "Graphiti 開源知識圖譜專案" : "The open-source Graphiti knowledge-graph project"} />
+              </div>
+            </div>
+          )}
+
+          {module === IDX_ANA && (
+            <div className="animate-fade-in space-y-6">
+              <H2 icon={MODULE_ICONS[IDX_ANA]} number={NUM_LEARN+3}>{t.analytics_title}</H2>
+              <p className="text-slate-600 dark:text-slate-300">{t.analytics_desc}</p>
+              <p className="text-xs text-green-600 dark:text-green-400">💾 {t.analytics_wp_saved}</p>
+
+              <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+                <h3 className="font-bold mb-4">{t.analytics_form_title}</h3>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-slate-500">{t.analytics_group}</label>
+                    <select value={studentInfo.group} onChange={e=>setStudentInfo(s=>({...s,group:e.target.value}))}
+                      className="w-full mt-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-transparent">
+                      <option value="">{t.analytics_group_select}</option>
+                      {t.group_options.map(g => <option key={g} value={g}>{g}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">{t.analytics_dept}</label>
+                    <input value={studentInfo.dept} placeholder={t.analytics_dept_ph} onChange={e=>setStudentInfo(s=>({...s,dept:sanitizeName(e.target.value)}))}
+                      className="w-full mt-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-transparent"/>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">{t.analytics_id}</label>
+                    <input value={studentInfo.id} placeholder={t.analytics_id_ph} onChange={e=>setStudentInfo(s=>({...s,id:sanitizeStudentId(e.target.value)}))}
+                      className="w-full mt-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-transparent"/>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">{t.analytics_name_en}</label>
+                    <input value={studentInfo.nameEn} placeholder={t.analytics_name_en_ph} onChange={e=>setStudentInfo(s=>({...s,nameEn:sanitizeName(e.target.value)}))}
+                      className="w-full mt-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-transparent"/>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500">{t.analytics_name_zh}</label>
+                    <input value={studentInfo.nameZh} placeholder={t.analytics_name_zh_ph} onChange={e=>setStudentInfo(s=>({...s,nameZh:sanitizeName(e.target.value)}))}
+                      className="w-full mt-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-transparent"/>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-center">
+                  <IconActivity className="mx-auto mb-1 text-[#004030] dark:text-[#D8C3A5]"/>
+                  <p className="text-xl font-black">{totalTime}{t.analytics_sec}</p><p className="text-xs text-slate-500">{t.analytics_total_time}</p>
+                </div>
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-center">
+                  <IconZap className="mx-auto mb-1 text-[#004030] dark:text-[#D8C3A5]"/>
+                  <p className="text-xl font-black">{totalClicks}{t.analytics_times}</p><p className="text-xs text-slate-500">{t.analytics_total_clicks}</p>
+                </div>
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-center">
+                  <IconCheckCircle className="mx-auto mb-1 text-[#004030] dark:text-[#D8C3A5]"/>
+                  <p className="text-xl font-black">{overallAcc}%</p><p className="text-xs text-slate-500">{t.analytics_overall_acc}</p>
+                </div>
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-center">
+                  <IconLayers className="mx-auto mb-1 text-[#004030] dark:text-[#D8C3A5]"/>
+                  <p className="text-xl font-black">{cardUsage}%</p><p className="text-xs text-slate-500">{t.analytics_card_usage}</p>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+                <h3 className="font-bold mb-4">{t.analytics_progress_title}</h3>
+                <div className="space-y-2">
+                  {Array.from({length:NUM_LEARN},(_,i)=>i+1).map(id => {
+                    const visited = (analytics.time[id]||0) > 0;
+                    const quizDone = (analytics.quizTotal[id]||0) > 0;
+                    const pct = quizDone ? Math.round(analytics.quizCorrect[id]/analytics.quizTotal[id]*100) : (visited?50:0);
+                    return (
+                      <button key={id} onClick={()=>goTo(id)} className="w-full text-left">
+                        <div className="flex justify-between text-xs mb-1">
+                          <span>{MODULE_ICONS[id]} {moduleShortTitle(t,id)}</span>
+                          <span>{quizDone ? t.analytics_progress_quiz_done : visited ? t.analytics_progress_visited : t.analytics_progress_not_visited}</span>
+                        </div>
+                        <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                          <div className="h-full bg-[#004030] dark:bg-[#D8C3A5]" style={{width:`${pct}%`}}></div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+                <h3 className="font-bold mb-4">{t.analytics_wp_title}</h3>
+                {(() => {
+                  const weak = [];
+                  for (let i=1;i<=NUM_LEARN;i++){
+                    if ((analytics.quizTotal[i]||0)>0){
+                      const acc = Math.round(analytics.quizCorrect[i]/analytics.quizTotal[i]*100);
+                      if (acc<75) weak.push({id:i, acc});
+                    }
+                  }
+                  weak.sort((a,b)=>a.acc-b.acc);
+                  if (weak.length===0) return <p className="text-sm text-green-600 dark:text-green-400">{tTotal>0 ? t.analytics_wp_allpass : t.analytics_no_data}</p>;
+                  return weak.map(w => (
+                    <div key={w.id} className="text-sm mb-3 pb-3 border-b border-slate-100 dark:border-slate-700 last:border-0">
+                      <p className="font-bold">{moduleShortTitle(t,w.id)} — {w.acc}%</p>
+                      {(analytics.wrongTopics[w.id]||[]).length > 0 && (
+                        <p className="text-slate-500 text-xs mt-1">{t.analytics_wp_incorrect} {(analytics.wrongTopics[w.id]||[]).join('；')}</p>
+                      )}
+                      <button onClick={()=>goTo(w.id)} className="text-xs text-[#004030] dark:text-[#D8C3A5] underline mt-1">{t.analytics_wp_goto}</button>
+                    </div>
+                  ));
+                })()}
+              </div>
+
+              <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 overflow-x-auto">
+                <table className="w-full text-sm min-w-[600px]">
+                  <thead><tr className="text-left text-slate-400 border-b border-slate-200 dark:border-slate-700">
+                    <th className="py-2 pr-4">{t.analytics_module}</th><th className="py-2 pr-4">{t.analytics_time}</th>
+                    <th className="py-2 pr-4">{t.analytics_clicks}</th><th className="py-2 pr-4">{t.analytics_correct_ans_total}</th>
+                    <th className="py-2 pr-4">{t.analytics_cards_read_total}</th>
+                  </tr></thead>
+                  <tbody>
+                    {Array.from({length:NUM_LEARN},(_,i)=>i+1).map(id => (
+                      <tr key={id} className="border-b border-slate-100 dark:border-slate-800">
+                        <td className="py-2 pr-4">{MODULE_ICONS[id]} {moduleShortTitle(t,id)}</td>
+                        <td className="py-2 pr-4">{analytics.time[id]||0}{t.analytics_sec}</td>
+                        <td className="py-2 pr-4">{analytics.clicks[id]||0}</td>
+                        <td className="py-2 pr-4">{analytics.quizTotal[id] ? `${analytics.quizCorrect[id]}/${analytics.quizTotal[id]}` : t.analytics_no_data}</td>
+                        <td className="py-2 pr-4">{analytics.cardsTotal[id] ? `${analytics.cardsRead[id]}/${analytics.cardsTotal[id]}` : '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button onClick={exportCSV} disabled={!formFilled}
+                  className="px-5 py-2.5 bg-[#004030] dark:bg-[#D8C3A5] text-white dark:text-[#004030] font-bold rounded-lg disabled:opacity-40">
+                  {t.analytics_export_csv}
+                </button>
+                {!formFilled && <p className="text-xs text-red-500 self-center">{t.analytics_fill_required}</p>}
+                <button onClick={clearHistory} className="px-5 py-2.5 border border-red-400 text-red-500 font-bold rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
+                  {t.analytics_wp_clear}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-12 flex justify-between items-center pt-8 border-t border-slate-300 dark:border-slate-700">
+            <button onClick={() => module>0 && goTo(module-1)} disabled={module===0}
+              className="px-4 py-2 text-sm font-bold border border-slate-300 dark:border-slate-600 rounded-lg disabled:opacity-0 flex items-center gap-1">
+              ← {t.nav_prev}
+            </button>
+            <button onClick={() => module<TOTAL-1 && goTo(module+1)} disabled={module===TOTAL-1}
+              className="px-4 py-2 text-sm font-bold bg-[#004030] dark:bg-[#D8C3A5] text-white dark:text-[#004030] rounded-lg disabled:opacity-0 flex items-center gap-1">
+              {t.nav_next} →
+            </button>
+          </div>
+        </main>
+      </div>
+
+      <footer className="h-8 bg-[#004030] flex items-center justify-between px-4 shrink-0">
+        <span className="text-[#D8C3A5]/60 text-[10px] sm:text-xs">{t.date} · {t.copyright}</span>
+        <span className="text-[#D8C3A5]/60 text-[10px] sm:text-xs flex items-center gap-3">
+          <span>{t.architect_label}&nbsp;<a href={t.architect_url} target="_blank" rel="noopener noreferrer" className="text-[#D8C3A5] hover:text-white underline">{t.architect_name}</a></span>
+          <button onClick={() => window.scrollTo({top:0,behavior:'smooth'})} className="text-[#D8C3A5] hover:text-white font-bold">Top ↑</button>
+        </span>
+      </footer>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
