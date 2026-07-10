@@ -39,7 +39,7 @@ const { useState, useEffect, useRef } = React;
 
 /* ============ 前端防禦機制 ============ */
 (function(){
-  const ALLOWED = ['', 'localhost', '127.0.0.1', 'claude.ai'];
+  const ALLOWED = ['', 'localhost', '127.0.0.1', 'claude.ai', 'lolopodcast.github.io'];
   const REDIRECT = 'https://www.ibs.ncnu.edu.tw/index.php/faculty/tenured-professor/299-smlo';
   if (!ALLOWED.some(d => location.hostname === d || (d && location.hostname.endsWith('.'+d)))) {
     document.body.innerHTML = '<div style="text-align:center;padding:60px;font-family:sans-serif"><h1>Access Denied</h1><p>This resource is not authorised on this domain.</p></div>';
