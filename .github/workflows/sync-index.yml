@@ -1,0 +1,38 @@
+name: Sync index.html from SPA source
+
+# Keeps index.html (the file GitHub Pages actually serves at the site root)
+# as an exact copy of AI-native工作坊教材_SPA.html (the file we actually edit).
+# Only runs when the SPA source file changes, and only commits back if the
+# copy is actually different — so it can never trigger itself in a loop.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'AI-native工作坊教材_SPA.html'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy SPA source to index.html
+        run: cp "AI-native工作坊教材_SPA.html" index.html
+
+      - name: Commit and push if index.html changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "index.html already matches the SPA source — nothing to do."
+          else
+            git commit -m "Auto-sync index.html from AI-native工作坊教材_SPA.html [skip ci]"
+            git push
+          fi
