@@ -1,0 +1,710 @@
+<style>
+  :root{
+    --bg:#EAF1F6;
+    --bg-grid:rgba(15,42,74,.10);
+    --ink:#12202C;
+    --ink-soft:#44596B;
+    --line:#2E6E93;
+    --line-soft:rgba(46,110,147,.35);
+    --accent:#D97D22;
+    --accent-ink:#241202;
+    --sheet-bg:#F5F9FB;
+    --card-bg:rgba(46,110,147,.07);
+    --shadow:rgba(15,42,74,.28);
+    --font-display:"PingFang TC","Microsoft JhengHei","Noto Sans TC","Hiragino Sans GB","Segoe UI",sans-serif;
+    --font-body:"PingFang TC","Microsoft JhengHei","Noto Sans TC","Segoe UI",sans-serif;
+    --font-mono:"SF Mono","JetBrains Mono",Consolas,"Courier New",monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0E2740; --bg-grid:rgba(255,255,255,.08); --ink:#E6F1F8; --ink-soft:#9FBBCF;
+      --line:#6FB2DA; --line-soft:rgba(111,178,218,.35); --accent:#F2A94D; --accent-ink:#1B1204;
+      --sheet-bg:#12314F; --card-bg:rgba(111,178,218,.09); --shadow:rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0E2740; --bg-grid:rgba(255,255,255,.08); --ink:#E6F1F8; --ink-soft:#9FBBCF;
+    --line:#6FB2DA; --line-soft:rgba(111,178,218,.35); --accent:#F2A94D; --accent-ink:#1B1204;
+    --sheet-bg:#12314F; --card-bg:rgba(111,178,218,.09); --shadow:rgba(0,0,0,.45);
+  }
+  :root[data-theme="light"]{
+    --bg:#EAF1F6; --bg-grid:rgba(15,42,74,.10); --ink:#12202C; --ink-soft:#44596B;
+    --line:#2E6E93; --line-soft:rgba(46,110,147,.35); --accent:#D97D22; --accent-ink:#241202;
+    --sheet-bg:#F5F9FB; --card-bg:rgba(46,110,147,.07); --shadow:rgba(15,42,74,.28);
+  }
+
+  *{box-sizing:border-box;}
+  .wrap{ width:100%; display:flex; justify-content:center; padding:2vh 0; }
+  .deck{
+    position:relative; width:100%; max-width:1180px; aspect-ratio:16/9; min-height:460px;
+    background:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px),
+      var(--bg);
+    background-size:38px 38px, 38px 38px, auto;
+    color:var(--ink); font-family:var(--font-body);
+    border-radius:6px; overflow:hidden; box-shadow:0 24px 70px var(--shadow);
+    outline:1px solid var(--line-soft);
+  }
+  @media (max-width:640px){
+    .deck{ aspect-ratio:auto; min-height:82vh; }
+  }
+
+  .ruler{ position:absolute; top:0; left:0; right:0; height:20px; z-index:5;
+    background:linear-gradient(180deg, var(--sheet-bg), transparent); }
+  .ruler-fill{ position:absolute; top:0; left:0; height:3px; background:var(--accent); width:0%;
+    transition:width .5s ease; }
+  .ruler-track{ position:absolute; top:0; left:0; right:0; height:3px; background:var(--line-soft); }
+  .ruler-ticks{ position:absolute; top:3px; left:0; right:0; height:17px; }
+  .tick{ position:absolute; top:0; width:1px; height:7px; background:var(--line-soft); }
+  .tick span{ position:absolute; top:8px; left:3px; font-family:var(--font-mono); font-size:8px;
+    color:var(--ink-soft); white-space:nowrap; letter-spacing:.02em; }
+
+  .stage{ position:absolute; top:20px; left:0; right:0; bottom:58px; }
+  .slide{ position:absolute; inset:0; opacity:0; visibility:hidden; pointer-events:none;
+    transition:opacity .4s ease; padding:clamp(16px,3.6vw,46px); }
+  .slide.active{ opacity:1; visibility:visible; pointer-events:auto; }
+
+  .crop{ position:absolute; width:13px; height:13px; opacity:.5; }
+  .crop.tl{ top:7px; left:7px; border-top:1px solid var(--line); border-left:1px solid var(--line); }
+  .crop.tr{ top:7px; right:7px; border-top:1px solid var(--line); border-right:1px solid var(--line); }
+  .crop.bl{ bottom:7px; left:7px; border-bottom:1px solid var(--line); border-left:1px solid var(--line); }
+  .crop.br{ bottom:7px; right:7px; border-bottom:1px solid var(--line); border-right:1px solid var(--line); }
+
+  .sheet-label{ position:absolute; top:9px; left:26px; font-family:var(--font-mono);
+    font-size:clamp(8px,.9vw,10px); letter-spacing:.08em; color:var(--ink-soft); opacity:.8; }
+
+  .slide-content{ height:100%; display:flex; flex-direction:column; justify-content:center; gap:clamp(8px,1.3vh,16px); }
+  .slide-content.center{ align-items:center; text-align:center; }
+
+  .eyebrow{ font-family:var(--font-mono); font-size:clamp(10px,1vw,12px); letter-spacing:.16em;
+    color:var(--accent); text-transform:uppercase; margin:0; }
+  h1,h2{ margin:0; font-family:var(--font-display); font-weight:800; color:var(--ink); text-wrap:balance; }
+  h1.huge{ font-size:clamp(26px,4.8vw,52px); line-height:1.14; }
+  h2{ font-size:clamp(19px,2.9vw,32px); line-height:1.22; }
+  .accent{ color:var(--accent); }
+  .subhead{ font-size:clamp(13px,1.5vw,18px); color:var(--ink-soft); max-width:640px; margin:0; }
+  .footnote{ font-size:clamp(11px,1.2vw,13px); color:var(--ink-soft); margin:4px 0 0; }
+  p{ margin:0; }
+
+  .reveal{ opacity:0; transform:translateY(12px); transition:opacity .5s ease, transform .5s ease; }
+  .reveal.in{ opacity:1; transform:translateY(0); }
+  .draw{ transform:scaleY(0); transform-origin:top; transition:transform .5s ease; }
+  .draw.in{ transform:scaleY(1); }
+  .draw-h{ transform:scaleX(0); transform-origin:left; transition:transform .5s ease; }
+  .draw-h.in{ transform:scaleX(1); }
+
+  .card-row{ display:flex; gap:clamp(9px,1.4vw,18px); flex-wrap:wrap; }
+  .card{ flex:1 1 210px; border:1px solid var(--line-soft); background:var(--card-bg); border-radius:3px;
+    padding:clamp(10px,1.4vw,16px); position:relative; }
+  .card-mark{ font-family:var(--font-mono); font-size:11px; color:var(--accent); letter-spacing:.06em; }
+  .card p{ margin-top:6px; font-size:clamp(12px,1.35vw,15px); color:var(--ink); line-height:1.45; }
+
+  .node{ border:1px solid var(--line); background:var(--sheet-bg); border-radius:3px;
+    padding:6px 12px; font-size:clamp(11px,1.25vw,13px); font-weight:600; white-space:nowrap; text-align:center; }
+  .node .tag{ display:block; font-family:var(--font-mono); font-weight:400; font-size:9px;
+    color:var(--ink-soft); letter-spacing:.04em; margin-top:2px; white-space:normal; }
+
+  .flow-grid{ display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .flow-row{ display:flex; align-items:center; gap:6px; justify-content:center; flex-wrap:nowrap; }
+  .flow-arrow{ width:22px; height:1px; background:var(--line); flex:0 0 auto; position:relative; }
+  .flow-arrow::after{ content:""; position:absolute; right:0; top:-3px; width:0; height:0;
+    border-top:3px solid transparent; border-bottom:3px solid transparent; border-left:5px solid var(--line); }
+  .flow-arrow.iterate{ background-image:repeating-linear-gradient(90deg, var(--accent) 0 4px, transparent 4px 8px);
+    background-color:transparent; }
+  .flow-arrow.iterate::after{ border-left-color:var(--accent); }
+  .flow-down{ width:1px; height:12px; background:var(--line); }
+  .tagline{ font-size:clamp(11px,1.25vw,14px); color:var(--ink-soft); max-width:680px; text-align:center; }
+
+  .role-row{ display:flex; align-items:center; gap:clamp(8px,1.4vw,16px); }
+  .role-arrow{ height:1px; flex:1; background:var(--line); transform:scaleX(0); transform-origin:left;
+    transition:transform .5s ease; position:relative; min-width:26px; }
+  .role-arrow.in{ transform:scaleX(1); }
+  .role-arrow::after{ content:""; position:absolute; right:0; top:-3px; width:0; height:0;
+    border-top:4px solid transparent; border-bottom:4px solid transparent; border-left:6px solid var(--line); }
+  .role-rows{ display:flex; flex-direction:column; gap:12px; width:100%; max-width:540px; }
+
+  .panels{ display:flex; gap:clamp(9px,1.4vw,20px); flex-wrap:wrap; }
+  .panel{ flex:1 1 240px; border:1px solid var(--line-soft); border-radius:4px; padding:clamp(10px,1.4vw,16px);
+    background:var(--card-bg); position:relative; }
+  .panel-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
+  .panel-head h3{ font-family:var(--font-display); font-size:clamp(13px,1.6vw,16px); margin:0; font-weight:800; }
+  .badge{ font-family:var(--font-mono); font-size:10px; background:var(--accent); color:var(--accent-ink);
+    padding:2px 6px; border-radius:2px; letter-spacing:.04em; }
+  .panel ul{ margin:0; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:5px; }
+  .panel li{ font-size:clamp(11px,1.25vw,13px); color:var(--ink); display:flex; gap:7px; }
+  .panel li::before{ content:"›"; color:var(--accent); font-weight:700; }
+
+  .compare{ display:flex; gap:clamp(9px,1.4vw,18px); flex-wrap:wrap; }
+  .compare .panel.vague{ border-style:dashed; opacity:.85; }
+  .compare .panel.clear{ border-color:var(--accent); }
+  .compare li.miss{ color:var(--ink-soft); text-decoration:line-through; }
+  .compare li.miss::before{ content:"✕"; color:var(--ink-soft); }
+  .compare li.have::before{ content:"✓"; color:var(--accent); }
+
+  .agents{ display:flex; flex-direction:column; align-items:center; }
+  .agent-row{ display:flex; gap:clamp(12px,2.2vw,30px); margin:10px 0; }
+  .agent-node .node{ font-size:clamp(10px,1.15vw,12px); }
+  .agents .connector{ width:1px; height:16px; background:var(--line); }
+
+  .checklist{ display:grid; grid-template-columns:repeat(2,minmax(190px,1fr)); gap:clamp(8px,1.4vw,16px); }
+  @media (max-width:560px){ .checklist{ grid-template-columns:1fr; } }
+  .check-item{ display:flex; gap:9px; align-items:flex-start; }
+  .check-box{ width:14px; height:14px; border:1px solid var(--line); flex:0 0 auto; margin-top:3px; position:relative; }
+  .check-box::after{ content:""; position:absolute; left:2px; top:-1px; width:4px; height:8px;
+    border-right:2px solid var(--accent); border-bottom:2px solid var(--accent); transform:rotate(35deg) scale(0);
+    transition:transform .3s ease .1s; }
+  .check-item.in .check-box::after{ transform:rotate(35deg) scale(1); }
+  .check-item b{ font-size:clamp(12px,1.35vw,14px); }
+  .check-item span{ display:block; font-size:clamp(10px,1.15vw,12px); color:var(--ink-soft); margin-top:1px; }
+
+  .stamp{ align-self:center; border:2px solid var(--accent); color:var(--accent); border-radius:6px;
+    padding:10px 22px; font-family:var(--font-mono); font-weight:700; letter-spacing:.06em;
+    transform:rotate(-3deg); font-size:clamp(12px,1.5vw,15px); text-decoration:none; cursor:pointer; }
+  .stamp:hover{ background:var(--accent); color:var(--accent-ink); }
+  .stamp:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+  .cta-foot{ font-family:var(--font-mono); font-size:clamp(10px,1.2vw,12px); color:var(--ink-soft); }
+
+  .slide.divider .slide-content{ position:relative; }
+  .divider-num{ font-family:var(--font-mono); font-size:clamp(50px,11vw,110px); color:var(--line-soft);
+    opacity:.4; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    z-index:0; pointer-events:none; user-select:none; }
+  .divider-line{ width:80px; height:2px; background:var(--accent); position:relative; z-index:1; }
+
+  .nav-btn{ position:absolute; bottom:70px; width:28px; height:28px; border-radius:50%;
+    border:1px solid var(--line-soft); background:var(--sheet-bg); color:var(--ink); display:flex;
+    align-items:center; justify-content:center; cursor:pointer; font-size:13px; z-index:6; opacity:.7;
+    transition:opacity .2s ease; }
+  .nav-btn:hover{ opacity:1; }
+  .nav-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .nav-btn.prev{ left:10px; } .nav-btn.next{ right:10px; }
+  .hint{ position:absolute; top:6px; right:12px; font-family:var(--font-mono); font-size:9px;
+    color:var(--ink-soft); opacity:.7; z-index:5; }
+
+  .caption-bar{ position:absolute; left:7%; right:7%; bottom:62px; z-index:6; text-align:center;
+    font-size:clamp(11px,1.5vw,14px); line-height:1.4; color:#fdfdfd; pointer-events:none; font-family:var(--font-body); }
+  .caption-bar:not(:empty){ background:rgba(6,14,22,.68); padding:6px 12px; border-radius:3px; }
+
+  .control-bar{ position:absolute; left:0; right:0; bottom:0; min-height:42px; display:flex; flex-direction:column;
+    gap:2px; padding:5px 12px; background:var(--sheet-bg);
+    border-top:1px solid var(--line-soft); z-index:6; }
+  .control-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; width:100%; }
+  .voice-debug{ font-family:var(--font-mono); font-size:9px; color:var(--accent); opacity:.9;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .title-block{ font-family:var(--font-mono); font-size:8.5px; line-height:1.35; color:var(--ink-soft);
+    letter-spacing:.02em; }
+  .title-block span{ opacity:.75; }
+  .controls{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .ctrl-btn{ font-family:var(--font-mono); font-size:10.5px; padding:4px 9px; border:1px solid var(--line-soft);
+    background:var(--card-bg); color:var(--ink); border-radius:2px; cursor:pointer; }
+  .ctrl-btn:hover{ border-color:var(--line); }
+  .ctrl-btn[aria-pressed="false"]{ opacity:.55; }
+  .ctrl-btn:disabled{ opacity:.35; cursor:not-allowed; }
+  .ctrl-btn:focus-visible, .lang-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+  .lang-toggle{ display:flex; border:1px solid var(--line-soft); border-radius:2px; overflow:hidden; }
+  .lang-btn{ font-family:var(--font-mono); font-size:10px; padding:4px 8px; border:none; background:transparent;
+    color:var(--ink-soft); cursor:pointer; }
+  .lang-btn.active{ background:var(--accent); color:var(--accent-ink); }
+  .hud{ display:flex; gap:12px; font-family:var(--font-mono); font-size:9.5px; color:var(--ink-soft);
+    font-variant-numeric:tabular-nums; white-space:nowrap; }
+
+  @media (prefers-reduced-motion: reduce){
+    .slide, .reveal, .draw, .draw-h, .role-arrow{ transition:none !important; }
+  }
+</style>
+
+<div class="wrap">
+<div class="deck" id="deck" tabindex="0" aria-label="工作坊行銷簡報，共十三頁">
+
+  <div class="ruler">
+    <div class="ruler-track"></div>
+    <div class="ruler-fill" id="rulerFill"></div>
+    <div class="ruler-ticks" id="rulerTicks"></div>
+  </div>
+  <div class="hint">點擊畫面／空白鍵／→ 繼續　←上一頁</div>
+
+  <div class="stage" id="stage">
+
+    <section class="slide" data-dur="40">
+      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
+      <div class="sheet-label">SHEET 01 / 13 — 簡報藍圖</div>
+      <div class="slide-content center">
+        <p class="eyebrow reveal">教師 AI 產品開發工作坊</p>
+        <h1 class="huge reveal">當老師變成<br><span class="accent">PM / PjM</span></h1>
+        <p class="subhead reveal">用 AI-native 流程，打造你自己的課程數位產品</p>
+      </div>
+    </section>
+
+    <section class="slide divider" data-dur="15">
+      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
+      <div class="sheet-label">SHEET 02 / 13 — 章節</div>
+      <div class="slide-content center">
+        <div class="divider-num">01</div>
+        <p class="eyebrow reveal" style="position:relative;z-index:1;">PART ONE</p>
+        <h2 class="reveal" style="position:relative;z-index:1;">為什麼需要新的做法</h2>
+        <div class="divider-line draw-h"></div>
+      </div>
+    </section>
+
+    <section class="slide" data-dur="50">
+      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
+      <div class="sheet-label">SHEET 03 / 13 — 問題定義</div>
+      <div class="slide-content">
+        <p class="eyebrow reveal">現場的三個卡點</p>
+        <h2 class="reveal">你是不是也遇過這些狀況？</h2>
+        <div class="card-row">
+          <div class="card reveal"><span class="card-mark">01</span><p>全英語授課，學生課後看不懂教材，卻不敢發問</p></div>
+          <div class="card reveal"><span class="card-mark">02</span><p>老師沒有時間逐一回覆重複性的問題</p></div>
+          <div class="card reveal"><span class="card-mark">03</span><p>系所想追蹤學習成效，卻沒有合適的工具</p></div>
+        </div>
+        <p class="footnote reveal">過去的解法：找工程師、找廠商，然後開始漫長的等待。</p>
+      </div>
+    </section>
+
+    <section class="slide" data-dur="70">
+      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
+      <div class="sheet-label">SHEET 04 / 13 — 核心洞察</div>
+      <div class="slide-content">
+        <p class="eyebrow reveal">核心洞察</p>
+        <h2 class="reveal">六層架構，重新定義開發流程</h2>
+        <div class="flow-grid">
+          <div class="flow-row">
+            <div class="node reveal">Customer Needs<span class="tag">為什麼要做</span></div>
+            <div class="flow-arrow draw-h"></div>
+            <div class="node reveal">Product Goals<span class="tag">要達成什麼結果</span></div>
+            <div class="flow-arrow draw-h"></div>
+            <div class="node reveal">Open Spec<span class="tag">系統必須做什麼</span></div>
+          </div>
+          <div class="flow-down draw"></div>
+          <div class="flow-row">
+            <div class="node reveal">Architecture / Graphiti<span class="tag">彼此如何連結</span></div>
+            <div class="flow-arrow iterate draw-h"></div>
+            <div class="node reveal">Schema<span class="tag">資料長什麼樣</span></div>
+            <div class="flow-arrow draw-h"></div>
+            <div class="node reveal" style="border-color:var(--accent); color:var(--accent);">AI Coding → Production<span class="tag" style="color:var(--accent);">誰把它寫出來</span></div>
+          </div>
+        </div>
+        <p class="footnote reveal" style="text-align:center;">虛線處：Graphiti 與 Schema 互相疊代</p>
+        <p class="tagline reveal" style="margin:0 auto;">Spec 決定做什麼・Graphiti 決定怎麼組裝・Schema 決定資料長怎樣・AI Agent 負責寫出來</p>
+      </div>
+    </section>
+
+    <section class="slide" data-dur="50">
+      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
+      <div class="sheet-label">SHEET 05 / 13 — 角色轉換</div>
+      <div class="slide-content">
+        <p class="eyebrow reveal">角色轉換</p>
+        <h2 class="reveal">老師不用寫程式，一樣能主導開發</h2>
+        <div class="role-rows">
+          <div class="role-row">
+            <div class="node reveal" style="min-width:100px;">老師</div>
+            <div class="role-arrow"></div>
+            <div class="node reveal" style="min-width:160px; border-color:var(--accent); color:var(--accent);">Product Manager<br>+ Project Manager</div>
+          </div>
+          <div class="role-row">
+            <div class="node reveal" style="min-width:100px;">TA／協作教師</div>
+            <div class="role-arrow"></div>
+            <div class="node reveal" style="min-width:160px;">Vibe Coder</div>
+          </div>
+          <div class="role-row">
+            <div class="node reveal" style="min-width:100px;">Claude Code</div>
+            <div class="role-arrow"></div>
+            <div class="node reveal" style="min-width:160px;">Implementer</div>
+          </div>
+        </div>
+        <p class="footnote reveal">你不需要學程式語言，你只需要學會怎麼把教學需求說清楚。</p>
+      </div>
+    </section>
+
+    <section class="slide divider" data-dur="15">
+      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
+      <div class="sheet-label">SHEET 06 / 13 — 章節</div>
+      <div class="slide-content center">
+        <div class="divider-num">02</div>
+        <p class="eyebrow reveal" style="position:relative;z-index:1;">PART TWO</p>
+        <h2 class="reveal" style="position:relative;z-index:1;">實際上怎麼做</h2>
+        <div class="divider-line draw-h"></div>
+      </div>
+    </section>
+
+    <section class="slide" data-dur="68">
+      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
+      <div class="sheet-label">SHEET 07 / 13 — 工作坊架構</div>
+      <div class="slide-content">
+        <p class="eyebrow reveal">工作坊架構</p>
+        <h2 class="reveal">基礎 6 小時 ＋ 實施 6 小時</h2>
+        <div class="panels">
+          <div class="panel reveal">
+            <div class="panel-head"><h3>基礎模組</h3><span class="badge">6 HR</span></div>
+            <ul>
+              <li>Customer Needs → Product Goals</li>
+              <li>Open Spec（使用者故事）</li>
+              <li>Graphiti + Schema</li>
+              <li>Agile / PjM 必要概念導入</li>
+            </ul>
+          </div>
+          <div class="panel reveal">
+            <div class="panel-head"><h3>實施模組</h3><span class="badge">6 HR</span></div>
+            <ul>
+              <li>Claude Code 入門</li>
+              <li>Vibe Coding 實作</li>
+              <li>多重代理人協作</li>
+              <li>交接文件 + 團隊演練 + 回顧會</li>
+            </ul>
+          </div>
+        </div>
+        <p class="footnote reveal">⚡ 快速精華版：基礎模組 3HR ＋ 實施模組 3HR，適合時間有限的場次</p>
+      </div>
+    </section>
+
+    <section class="slide" data-dur="70">
+      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
+      <div class="sheet-label">SHEET 08 / 13 — 真實案例</div>
+      <div class="slide-content">
+        <p class="eyebrow reveal">真實案例</p>
+        <h2 class="reveal">駱世民教授的 EMI 課程實測</h2>
+        <p class="footnote reveal">「國際策略管理（SMMC）」雙語 AI 助教原型</p>
+        <div class="compare">
+          <div class="panel clear reveal">
+            <div class="panel-head"><h3>規格清楚</h3></div>
+            <ul>
+              <li class="have">中英雙語提問與回覆</li>
+              <li class="have">對話全部紀錄可匯出</li>
+              <li class="have">不確定時明確告知</li>
+            </ul>
+          </div>
+          <div class="panel vague reveal">
+            <div class="panel-head"><h3>規格模糊</h3></div>
+            <ul>
+              <li class="miss">沒有雙語</li>
+              <li class="miss">沒有對話紀錄</li>
+              <li class="miss">會亂編答案</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-dur="50">
+      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
+      <div class="sheet-label">SHEET 09 / 13 — 進階做法</div>
+      <div class="slide-content" style="align-items:center;">
+        <p class="eyebrow reveal">進階做法</p>
+        <h2 class="reveal">一句話，派出多個 AI 代理人</h2>
+        <div class="agents">
+          <div class="node reveal">Claude Code（主對話）</div>
+          <div class="connector draw"></div>
+          <div class="agent-row">
+            <div class="agent-node"><div class="node reveal">探索型</div></div>
+            <div class="agent-node"><div class="node reveal">實作型</div></div>
+            <div class="agent-node"><div class="node reveal">審查型</div></div>
+          </div>
+          <div class="connector draw"></div>
+          <div class="node reveal" style="border-color:var(--accent); color:var(--accent);">彙整結果</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide divider" data-dur="15">
+      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
+      <div class="sheet-label">SHEET 10 / 13 — 章節</div>
+      <div class="slide-content center">
+        <div class="divider-num">03</div>
+        <p class="eyebrow reveal" style="position:relative;z-index:1;">PART THREE</p>
+        <h2 class="reveal" style="position:relative;z-index:1;">你會帶走什麼、為什麼是現在</h2>
+        <div class="divider-line draw-h"></div>
+      </div>
+    </section>
+
+    <section class="slide" data-dur="50">
+      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
+      <div class="sheet-label">SHEET 11 / 13 — 帶走的東西</div>
+      <div class="slide-content">
+        <p class="eyebrow reveal">帶走的東西</p>
+        <h2 class="reveal">不只是一場工作坊</h2>
+        <div class="checklist">
+          <div class="check-item reveal"><div class="check-box"></div><div><b>完整規格包</b><span>Needs / Goals / Spec / Graphiti / Schema</span></div></div>
+          <div class="check-item reveal"><div class="check-box"></div><div><b>可運作原型</b><span>用 Claude Code 實際做出來</span></div></div>
+          <div class="check-item reveal"><div class="check-box"></div><div><b>交接文件</b><span>TA 或協作教師可直接接手</span></div></div>
+          <div class="check-item reveal"><div class="check-box"></div><div><b>團隊協作能力</b><span>Agile 節奏、看板、回顧會</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-dur="40">
+      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
+      <div class="sheet-label">SHEET 12 / 13 — 為什麼不一樣</div>
+      <div class="slide-content">
+        <p class="eyebrow reveal">為什麼不一樣</p>
+        <h2 class="reveal">不是教你聊天，是教你定義問題的紀律</h2>
+        <div class="compare">
+          <div class="panel vague reveal">
+            <div class="panel-head"><h3>一般 AI 工具教學</h3></div>
+            <ul><li class="miss">怎麼跟 AI 聊天</li><li class="miss">工具換了就要重學</li></ul>
+          </div>
+          <div class="panel clear reveal">
+            <div class="panel-head"><h3>這場工作坊</h3></div>
+            <ul><li class="have">完整的專案定義紀律</li><li class="have">AI 工具怎麼換都用得上</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-dur="55">
+      <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
+      <div class="sheet-label">SHEET 13 / 13 — 加入我們</div>
+      <div class="slide-content center">
+        <p class="eyebrow reveal">加入我們</p>
+        <h2 class="reveal">把你的教學想法，變成看得到、用得到的東西</h2>
+        <a class="stamp reveal" href="https://www.ilink-hss.org/AIEA" target="_blank" rel="noopener noreferrer">了解報名方式</a>
+        <p class="cta-foot reveal">標準版：基礎 6HR ＋ 實施 6HR　｜　快速精華版：基礎 3HR ＋ 實施 3HR</p>
+      </div>
+    </section>
+
+  </div>
+
+  <button class="nav-btn prev" id="prevBtn" aria-label="上一頁">‹</button>
+  <button class="nav-btn next" id="nextBtn" aria-label="下一頁">›</button>
+  <div class="caption-bar" id="captionBar" aria-live="polite"></div>
+
+  <div class="control-bar">
+    <div class="control-row">
+      <div class="title-block">Architect: Prof. Shihmin Lo, NCNU<br><span>(All rights reserved)</span></div>
+      <div class="controls">
+        <button id="playBtn" class="ctrl-btn">▶ 播放語音導覽</button>
+        <div class="lang-toggle">
+          <button class="lang-btn active" data-lang="zh" id="langZh" title="偵測中…">中文</button>
+          <button class="lang-btn" data-lang="en" id="langEn" title="偵測中…">EN</button>
+        </div>
+        <button id="ccBtn" class="ctrl-btn" aria-pressed="true">CC 字幕</button>
+      </div>
+      <div class="hud"><span id="hudIndex">01 / 13</span><span id="hudTime">目標 0:00</span></div>
+    </div>
+    <div class="voice-debug" id="voiceDebug">語音狀態：尚未播放</div>
+  </div>
+
+</div>
+</div>
+
+<script>
+(function(){
+  var deck = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(deck.querySelectorAll('.slide'));
+  var durations = slides.map(function(s){ return parseInt(s.getAttribute('data-dur'),10) || 30; });
+  var cumulative = [0];
+  durations.forEach(function(d,i){ cumulative.push(cumulative[i]+d); });
+  var total = cumulative[cumulative.length-1];
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- narration data (zh / en), aligned 1:1 with slide order ----
+  var NARR = [
+    { zh:"你有沒有想過，其實不用會寫程式，你也可以自己主導開發一個課程數位產品？接下來我想跟你分享一套我們設計出來的工作坊——它讓大學教師，不需要任何程式背景，就能扮演產品經理與專案經理的角色，用 AI 把你的教學想法，變成真正能用的數位工具。",
+      en:"Have you ever imagined leading the development of a digital product for your course, without writing a single line of code? I want to share a workshop we designed. It lets university faculty, with zero programming background, take on the role of product manager and project manager, and use AI to turn their teaching ideas into something real." },
+    { zh:"第一部：為什麼需要新的做法。", en:"Part One: why we need a new approach." },
+    { zh:"我們都遇過類似的狀況：EMI 全英語授課，學生課後常常看不懂教材，卻不敢舉手發問；老師想幫忙，卻沒有時間一一回覆重複性的問題；系所也希望能追蹤學生在哪些單元卡關，但手上沒有合適的工具。過去，這些問題的解法通常是——去找工程師、去找廠商，然後開始漫長的溝通與等待。",
+      en:"We've all seen this: in English-medium instruction, students often can't keep up after class but hesitate to ask questions. Instructors don't have time to answer the same questions repeatedly. And departments want to track where students get stuck, but lack the right tool. In the past, the only fix was hiring engineers or vendors, then waiting through long rounds of back and forth." },
+    { zh:"但現在情況不一樣了。AI 時代真正改變的，不是要不要用 AI，而是開發一個數位產品的整個流程。我們把它整理成六層架構：先問為什麼要做，這是 Needs；再問要達成什麼結果，這是 Goals；然後決定系統必須做什麼，這是 Spec；接著畫出彼此怎麼連結，這是 Graphiti；再定義資料長什麼樣，這是 Schema；最後，才是動手實作。用一句話說：Spec 決定做什麼，Graphiti 決定怎麼組裝，Schema 決定資料長怎樣，而 AI Agent 負責把它寫出來。",
+      en:"But things have changed. What AI really transforms isn't whether to use it, it's the entire process of building a digital product. We organized it into six layers: first ask why, that's Needs; then what outcome, that's Goals; then what the system must do, that's Spec; then how things connect, that's Graphiti; then what the data looks like, that's Schema; and only then, implementation. In one sentence: Spec decides what to build, Graphiti decides how it connects, Schema decides what the data looks like, and the AI agent writes it." },
+    { zh:"這代表什麼？代表老師的角色，從不會寫程式所以做不了，變成負責定義要做什麼、怎麼組裝、資料長怎樣的產品經理與專案經理。真正動手把程式碼寫出來的，是 AI，具體來說，是 Claude Code。你不需要學程式語言，你只需要學會怎麼把你的教學需求說清楚。",
+      en:"This means the instructor's role shifts, from 'I can't code, so I can't build this' to 'I define what to build, how it connects, and what the data looks like,' acting as both product manager and project manager. The one actually writing the code is AI, specifically Claude Code. You don't need to learn a programming language. You just need to learn how to state your teaching needs clearly." },
+    { zh:"第二部：實際上怎麼做。", en:"Part Two: how it actually works." },
+    { zh:"所以我們設計了一套工作坊，分成兩個模組，各六小時。基礎模組，完全不需要碰任何 AI 工具，專注在把你的教學想法，一層一層轉譯成清楚的規格，同時導入 Agile 專案管理的必要概念，像是看板、衝刺、完成的定義。實施模組，才正式開始動手，用 Claude Code 把規格變成真正能運作的原型，還會學到怎麼把工作拆給多個 AI 代理人同時處理，加快速度。如果時間有限，我們也準備了快速精華版：基礎模組三小時，實施模組三小時，一樣可以完整走過六層架構。",
+      en:"So we designed a workshop in two six-hour modules. The Foundations module needs no AI tools at all, it focuses on translating your teaching ideas, layer by layer, into a clear specification, while introducing essential Agile concepts like Kanban boards, sprints, and definition of done. The Implementation module is where the hands-on work begins, using Claude Code to turn the spec into a working prototype, and learning to delegate tasks to multiple AI agents running in parallel. If time is limited, we also offer a condensed track: three hours of foundations and three hours of implementation, still covering the full six-layer framework." },
+    { zh:"這不是紙上談兵。我們實際用一個真實案例走過一次——駱世民教授的 EMI 課程，國際策略管理。學生英語授課常跟不上，老師沒時間逐一解惑。我們把需求一層一層寫成規格，交給 Claude Code，很快就做出一個雙語 AI 助教的原型。更關鍵的是，我們還故意示範了一次，如果規格寫得模糊，AI 做出來的東西會少了什麼。這個對比，讓在場的老師親眼看到：規格的清晰度，直接決定了 AI 產出的品質。",
+      en:"This isn't just theory. We walked through a real case, Professor Shihmin Lo's EMI course, Strategic Management of Multinational Corporations. Students struggled to keep up in English, and the instructor had no time to answer every question. We wrote the requirements layer by layer, handed them to Claude Code, and quickly had a working bilingual AI teaching assistant prototype. Just as important, we deliberately ran it again with a vague spec, so everyone could see exactly what a clear specification changes." },
+    { zh:"更進階一點，當專案有好幾件事要同時做，比如課程頁面、AI 助教、還有學習報表，我們也會教老師怎麼用一句話，請 Claude Code 同時派出好幾個 AI 代理人平行處理，甚至互相審查彼此的成果。老師不需要懂任何技術細節，只需要學會判斷：哪些工作可以同時做，哪些工作有先後順序。",
+      en:"One step further: when a project has several things to build at once, a course page, an AI assistant, a learning report, we also teach instructors how to ask Claude Code, in one sentence, to dispatch multiple AI agents in parallel, and even have them review each other's work. No technical detail required, just the judgment to know what can run in parallel, and what has to wait its turn." },
+    { zh:"第三部：你會帶走什麼、為什麼是現在。", en:"Part Three: what you'll take away, and why now." },
+    { zh:"完成這套工作坊，你會帶走的不只是一場工作坊的回憶，而是四樣實際的東西：一份完整的專案規格包、一個真正可以運作的原型、一份可以直接交給 TA 或協作教師的交接文件、還有一套帶團隊做 AI 專案的協作方法。",
+      en:"By the end of this workshop, you won't just walk away with a memory of the session, you'll walk away with four concrete things: a complete project specification, a working prototype, a handoff document your TA or co-instructor can pick up directly, and a method for leading a team through an AI-native project." },
+    { zh:"這跟坊間很多 AI 工具教學不一樣。我們不是教你怎麼跟 AI 聊天，而是教你一套完整的專案定義紀律，這套紀律，不管 AI 工具怎麼換，都會一直有用。",
+      en:"This is different from most AI tool tutorials out there. We're not teaching you how to chat with AI, we're teaching you a complete discipline for defining problems. And that discipline keeps working no matter which AI tool comes next." },
+    { zh:"如果你也想讓自己的課程，變成一個真正能用的數位產品，而且完全不需要先學程式，歡迎加入這場工作坊。基礎模組六小時，實施模組六小時；如果時間有限，也有三小時加三小時的快速精華版，一起把你的教學想法，變成看得到、用得到的東西。",
+      en:"If you want to turn your course into a real, working digital product, without learning to code first, join this workshop. Six hours of foundations, six hours of implementation, or a condensed three-plus-three track if time is tight. Let's turn your teaching ideas into something you can see, and something your students can use." }
+  ];
+
+  // ---- ruler ticks ----
+  var ticks = document.getElementById('rulerTicks');
+  cumulative.forEach(function(c,i){
+    var t = document.createElement('div');
+    t.className = 'tick';
+    t.style.left = (c/total*100) + '%';
+    if(i < slides.length){
+      var lbl = document.createElement('span');
+      lbl.textContent = fmt(c);
+      t.appendChild(lbl);
+    }
+    ticks.appendChild(t);
+  });
+  function fmt(sec){ var m=Math.floor(sec/60), s=sec%60; return m+':'+(s<10?'0':'')+s; }
+
+  // ---- slide navigation ----
+  var current = 0;
+  var rulerFill = document.getElementById('rulerFill');
+  var hudIndex = document.getElementById('hudIndex');
+  var hudTime = document.getElementById('hudTime');
+  var captionBar = document.getElementById('captionBar');
+
+  function playReveal(idx){
+    var s = slides[idx];
+    var items = s.querySelectorAll('.reveal, .draw, .draw-h');
+    items.forEach(function(el, i){
+      el.classList.remove('in');
+      void el.offsetWidth;
+      var delay = reduced ? 0 : i*70;
+      setTimeout(function(){ el.classList.add('in'); }, delay);
+    });
+  }
+
+  function goTo(idx, opts){
+    idx = Math.max(0, Math.min(slides.length-1, idx));
+    slides[current].classList.remove('active');
+    current = idx;
+    slides[current].classList.add('active');
+    playReveal(current);
+    rulerFill.style.width = (cumulative[current]/total*100) + '%';
+    hudIndex.textContent = String(current+1).padStart(2,'0') + ' / ' + slides.length;
+    hudTime.textContent = '目標 ' + fmt(cumulative[current]);
+    if(!(opts && opts.keepCaption)) captionBar.textContent = '';
+  }
+
+  document.getElementById('prevBtn').addEventListener('click', function(e){ e.stopPropagation(); stopNarration(); goTo(current-1); });
+  document.getElementById('nextBtn').addEventListener('click', function(e){ e.stopPropagation(); stopNarration(); goTo(current+1); });
+  deck.addEventListener('click', function(e){
+    if(e.target.closest('.nav-btn') || e.target.closest('.control-bar') || e.target.closest('a')) return;
+    stopNarration();
+    goTo(current+1);
+  });
+  window.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' || e.key === ' '){ e.preventDefault(); stopNarration(); goTo(current+1); }
+    else if(e.key === 'ArrowLeft'){ e.preventDefault(); stopNarration(); goTo(current-1); }
+  });
+
+  // ---- narration: pre-recorded audio files (audio/zh/01.mp3 … audio/en/13.mp3) ----
+  // Earlier versions used the browser's live speechSynthesis API, which proved unreliable
+  // across sessions (Chromium/Windows voice engine degrading, "interrupted" errors, silent
+  // stalls). Narration is now real, pre-rendered mp3 files (generated with edge-tts, voices
+  // zh-TW-HsiaoYuNeural / "Yating" and en-GB-RyanNeural), played back with a plain <audio>
+  // element — no runtime TTS engine involved, so none of that flakiness applies.
+  // NOTE: these audio files are separate assets next to this HTML file. That works when you
+  // open this file locally (double-click, or any local web server), but NOT when viewed as a
+  // single-file hosted Artifact preview, which only serves this one HTML file with no
+  // attached assets — the play button will show a clear "找不到音檔" message in that case.
+  var playBtn = document.getElementById('playBtn');
+  var ccBtn = document.getElementById('ccBtn');
+  var langZh = document.getElementById('langZh');
+  var langEn = document.getElementById('langEn');
+  var currentLang = 'zh';
+  var captionsOn = true;
+  var isPlaying = false;
+  var playToken = 0;
+  var audioEl = new Audio();
+  audioEl.preload = 'auto';
+
+  var voiceDebugEl = document.getElementById('voiceDebug');
+  function dbg(msg){ if(voiceDebugEl) voiceDebugEl.textContent = msg; }
+
+  langZh.title = 'zh-TW-HsiaoYuNeural（Yating，預先錄製）';
+  langEn.title = 'en-GB-RyanNeural（英式男聲，預先錄製）';
+
+  function audioPath(idx, lang){
+    var n = idx + 1;
+    return 'audio/' + lang + '/' + (n < 10 ? '0' + n : n) + '.mp3';
+  }
+
+  function splitSentences(text, lang){
+    var re = lang==='zh' ? /[^。！？]+[。！？]?/g : /[^.!?]+[.!?]?/g;
+    var m = text.match(re);
+    return (m || [text]).map(function(s){ return s.trim(); }).filter(Boolean);
+  }
+
+  // Captions are approximated by allocating the audio's total duration across sentence
+  // chunks in proportion to each chunk's character length — not a real forced alignment,
+  // but close enough for a subtitle bar, and it needs no extra timing data to maintain.
+  function attachCaptions(idx){
+    var chunks = splitSentences(NARR[idx][currentLang], currentLang);
+    var lens = chunks.map(function(c){ return c.length; });
+    var total = lens.reduce(function(a,b){ return a+b; }, 0) || 1;
+    var cum = [0];
+    lens.forEach(function(l,i){ cum.push(cum[i] + l); });
+    var thresholds = cum.map(function(c){ return c/total; });
+    var lastChunk = -1;
+    audioEl.ontimeupdate = function(){
+      if(!captionsOn || !audioEl.duration) return;
+      var progress = audioEl.currentTime / audioEl.duration;
+      var k = 0;
+      for(var j=0;j<chunks.length;j++){ if(progress >= thresholds[j]) k = j; }
+      if(k !== lastChunk){ lastChunk = k; captionBar.textContent = chunks[k]; }
+    };
+  }
+
+  function playFrom(idx){
+    isPlaying = true;
+    var myToken = ++playToken;
+    playBtn.textContent = '⏸ 停止導覽';
+    playBtn.disabled = false;
+    goTo(idx);
+    playCurrent(idx, myToken);
+  }
+
+  function playCurrent(idx, myToken){
+    if(myToken !== playToken) return;
+    captionBar.textContent = '';
+    dbg('載入中…');
+    audioEl.src = audioPath(idx, currentLang);
+    attachCaptions(idx);
+    audioEl.onended = function(){
+      if(myToken !== playToken) return;
+      if(idx+1 < slides.length && isPlaying){
+        setTimeout(function(){ if(myToken === playToken) playFrom(idx+1); }, 350);
+      } else {
+        stopNarration();
+      }
+    };
+    audioEl.onerror = function(){
+      if(myToken !== playToken) return;
+      dbg('⚠ 找不到音檔（' + audioPath(idx, currentLang) + '）——請用本機檔案開啟，而不是線上預覽');
+    };
+    var p = audioEl.play();
+    if(p && p.then){
+      p.then(function(){ dbg('▶ 播放中：' + audioPath(idx, currentLang)); })
+       .catch(function(err){ dbg('⚠ 無法播放：' + (err && err.name ? err.name : '未知錯誤')); });
+    }
+  }
+
+  function setLang(lang){
+    currentLang = lang;
+    langZh.classList.toggle('active', lang==='zh');
+    langEn.classList.toggle('active', lang==='en');
+    if(isPlaying){ playFrom(current); }
+  }
+  langZh.addEventListener('click', function(e){ e.stopPropagation(); setLang('zh'); });
+  langEn.addEventListener('click', function(e){ e.stopPropagation(); setLang('en'); });
+
+  ccBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    captionsOn = !captionsOn;
+    ccBtn.setAttribute('aria-pressed', String(captionsOn));
+    if(!captionsOn) captionBar.textContent = '';
+  });
+
+  function stopNarration(){
+    playToken++;
+    var wasPlaying = isPlaying;
+    isPlaying = false;
+    audioEl.onended = null;
+    audioEl.onerror = null;
+    audioEl.pause();
+    playBtn.textContent = '▶ 播放語音導覽';
+    dbg(wasPlaying ? '語音狀態：已停止' : '語音狀態：尚未播放');
+  }
+
+  playBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    if(isPlaying){ stopNarration(); }
+    else { playFrom(current); }
+  });
+
+  goTo(0);
+})();
+</script>
